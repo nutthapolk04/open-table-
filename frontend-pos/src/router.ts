@@ -1,22 +1,22 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
-    { path: '/', redirect: '/tables' },
-    {
-        path: '/tables',
-        name: 'tables',
-        component: () => import('./App.vue')
-    },
-    {
-        path: '/billing',
-        name: 'billing',
-        component: () => import('./App.vue')
-    }
-]
+  { path: "/", redirect: "/tables" },
+  {
+    path: "/tables",
+    name: "tables",
+    component: () => import("./views/TablesView.vue"),
+  },
+  {
+    path: "/order",
+    name: "order",
+    component: () => import("./views/OrderView.vue"),
+  },
+];
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes
-})
+  history: createWebHistory(),
+  routes,
+});
 
-export default router
+export default router;

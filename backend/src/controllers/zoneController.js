@@ -40,7 +40,17 @@ exports.getTables = async (req, res) => {
     const prisma = req.app.get('prisma');
     try {
         const tables = await prisma.table.findMany({
-            include: { zone: true }
+            include: {
+                zone: true,
+                sessions: {
+                    where: { status: 'ACTIVE' },
+                    include: {
+                        orders: {
+                            include: { items: { include: { menu: true } } }
+                        }
+                    }
+                }
+            }
         });
         res.json(tables);
     } catch (error) {
