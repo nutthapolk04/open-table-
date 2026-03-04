@@ -1,195 +1,134 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useI18n } from "vue-i18n";
-import {
-  LayoutDashboard,
-  Utensils,
-  Map,
-  Settings,
+import { ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { 
+  LayoutDashboard, 
+  Map, 
+  ChefHat, 
+  Settings, 
   LogOut,
-  Globe,
-} from "lucide-vue-next";
-import ZonesView from "./views/ZonesView.vue";
-import MenuView from "./views/MenuView.vue";
-import PosView from "./views/PosView.vue";
+  ChevronRight,
+  User
+} from 'lucide-vue-next';
 
 const route = useRoute();
-const router = useRouter();
-const { t, locale } = useI18n();
+const isCollapsed = ref(false);
 
-const toggleLanguage = () => {
-  locale.value = locale.value === "th" ? "en" : "th";
-};
+const navItems = [
+  { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { name: 'Zones & Tables', path: '/floor-plan', icon: Map },
+  { name: 'Menu & Buffet', path: '/menu', icon: ChefHat },
+  { name: 'Settings', path: '/settings', icon: Settings },
+];
 
-const stats = computed(() => [
-  {
-    label: t("stats.todaySales"),
-    value: "฿12,450",
-    change: "+12%",
-    color: "text-emerald-600",
-  },
-  {
-    label: t("stats.activeTables"),
-    value: "8/15",
-    change: t("stats.busy"),
-    color: "text-amber-600",
-  },
-  {
-    label: t("stats.popularMenu"),
-    value: "Wagyu Beef",
-    change: t("stats.orders", { count: 32 }),
-    color: "text-indigo-600",
-  },
-]);
-
-const navItems = computed(() => [
-  {
-    id: "dashboard",
-    label: t("dashboard"),
-    icon: LayoutDashboard,
-    path: "/dashboard",
-  },
-  { id: "menu", label: t("menu"), icon: Utensils, path: "/menu" },
-  { id: "zones", label: t("zones"), icon: Map, path: "/zones" },
-  { id: "settings", label: t("settings"), icon: Settings, path: "/settings" },
-]);
 </script>
 
 <template>
-  <div class="flex h-screen bg-slate-50 font-sans">
+  <div class="flex h-screen bg-slate-50 font-['Outfit'] overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col">
-      <div class="p-6">
-        <h1
-          class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent"
-        >
-          BuffetMaster
-        </h1>
+    <aside 
+      :class="isCollapsed ? 'w-20' : 'w-72'"
+      class="bg-white border-r border-slate-200/60 flex flex-col transition-all duration-500 ease-in-out z-30 shadow-2xl shadow-indigo-100/20"
+    >
+      <!-- Logo -->
+      <div class="h-24 flex items-center px-8 shrink-0">
+        <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
+          <span class="text-white font-black text-xl italic">OT</span>
+        </div>
+        <span v-if="!isCollapsed" class="ml-4 font-black text-2xl tracking-tighter text-slate-800 uppercase italic">Admin</span>
       </div>
 
-      <nav class="flex-1 px-4 space-y-2 mt-4">
-        <router-link
-          v-for="item in navItems"
-          :key="item.id"
+      <!-- Navigation -->
+      <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto hidden-scrollbar">
+        <router-link 
+          v-for="item in navItems" 
+          :key="item.path"
           :to="item.path"
-          class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200"
-          :class="
-            route.path === item.path
-              ? 'bg-indigo-50 text-indigo-700'
-              : 'text-slate-600 hover:bg-slate-50'
-          "
+          class="flex items-center px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden"
+          :class="route.path === item.path ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-700'"
         >
-          <component :is="item.icon" class="w-5 h-5" />
-          <span class="font-medium text-sm">{{ item.label }}</span>
+          <component :is="item.icon" class="w-5 h-5 shrink-0" />
+          <span v-if="!isCollapsed" class="ml-4 font-bold text-sm tracking-wide">{{ item.name }}</span>
+          
+          <!-- Active Indicator dot when collapsed -->
+          <div v-if="isCollapsed && route.path === item.path" class="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full mr-2"></div>
         </router-link>
       </nav>
 
-      <div class="p-4 border-t border-slate-100">
-        <button
-          class="w-full flex items-center space-x-3 px-4 py-3 text-slate-500 hover:text-red-500 transition-colors"
-        >
-          <LogOut class="w-5 h-5" />
-          <span class="font-medium text-sm">{{ t("logout") }}</span>
-        </button>
+      <!-- User Profile -->
+      <div class="p-6 border-t border-slate-100">
+        <div class="flex items-center p-3 rounded-3xl bg-slate-50 border border-slate-200/40 relative group cursor-pointer hover:bg-white hover:shadow-lg transition-all">
+          <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold shrink-0">
+            <User class="w-5 h-5" />
+          </div>
+          <div v-if="!isCollapsed" class="ml-3 overflow-hidden">
+            <p class="text-sm font-black text-slate-800 truncate">Manager</p>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Administrator</p>
+          </div>
+          <ChevronRight v-if="!isCollapsed" class="ml-auto w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+        </div>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto p-8">
-      <header class="flex justify-between items-center mb-8">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800 capitalize">
-            {{ route.path.slice(1) ? t(route.path.slice(1)) : t("dashboard") }}
-          </h2>
-          <p class="text-slate-500 text-sm">
-            {{ t("welcomeBack") }}, {{ t("admin") }}
-          </p>
+    <main class="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+      <!-- Top Header -->
+      <header class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-10 flex items-center justify-between shrink-0 z-20 sticky top-0">
+        <div class="flex items-center">
+            <h1 class="text-xl font-black text-slate-800 uppercase tracking-widest italic">{{ route.name?.toString() || 'Management' }}</h1>
         </div>
-        <div class="flex space-x-4 items-center">
-          <button
-            @click="toggleLanguage"
-            class="flex items-center space-x-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors text-sm font-medium"
-          >
-            <Globe class="w-4 h-4" />
-            <span>{{ locale === "th" ? "EN" : "TH" }}</span>
-          </button>
-          <div
-            class="px-4 py-2 bg-white rounded-xl border border-slate-200 text-sm font-medium text-slate-600 shadow-sm"
-          >
-            March 2, 2026
-          </div>
+        <div class="flex items-center space-x-4">
+            <button class="w-10 h-10 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-indigo-600 transition-all">
+                <LayoutDashboard class="w-5 h-5" />
+            </button>
+            <div class="h-6 w-px bg-slate-200 mx-2"></div>
+            <button class="bg-indigo-50 text-indigo-600 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center shadow-sm">
+                <LogOut class="w-4 h-4 mr-2" />
+                Sign Out
+            </button>
         </div>
       </header>
 
-      <!-- Dashboard View -->
-      <div v-if="route.path === '/dashboard'" class="space-y-8">
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div
-            v-for="stat in stats"
-            :key="stat.label"
-            class="card p-6 border-none shadow-md bg-white hover:shadow-lg"
-          >
-            <p class="text-sm font-medium text-slate-500">{{ stat.label }}</p>
-            <div class="flex items-end justify-between mt-2">
-              <h3 class="text-3xl font-bold text-slate-800">
-                {{ stat.value }}
-              </h3>
-              <span
-                :class="[
-                  'text-xs font-semibold px-2 py-1 rounded-lg bg-slate-50',
-                  stat.color,
-                ]"
-              >
-                {{ stat.change }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent Activity Placeholder -->
-        <div class="card p-8 min-h-[400px]">
-          <h4 class="text-lg font-bold text-slate-800 mb-6">
-            {{ t("recentActivity") }}
-          </h4>
-          <div
-            class="flex flex-col items-center justify-center text-slate-400 mt-20"
-          >
-            <LayoutDashboard class="w-12 h-12 mb-4 opacity-20" />
-            <p>{{ t("activityPlaceholder") }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Menu & Tiers View -->
-      <MenuView v-else-if="route.path === '/menu'" />
-
-      <!-- POS View -->
-      <PosView v-else-if="route.path === '/pos'" />
-
-      <!-- Zones View -->
-      <ZonesView v-else-if="route.path === '/zones'" />
-
-      <!-- Other sections placeholder -->
-      <div
-        v-else
-        class="flex flex-col items-center justify-center h-[60vh] text-slate-400"
-      >
-        <component
-          :is="navItems.find((i) => i.path === route.path)?.icon"
-          class="w-16 h-16 mb-4 opacity-10"
-        />
-        <p class="text-lg font-medium">
-          {{ t("underConstruction", { module: route.path.slice(1) }) }}
-        </p>
+      <!-- View Wrapper -->
+      <div class="flex-1 overflow-y-auto p-10 hidden-scrollbar custom-scrollbar bg-slate-50/50">
+          <router-view v-slot="{ Component }">
+            <transition 
+              name="fade-slide" 
+              mode="out-in"
+            >
+              <component :is="Component" />
+            </transition>
+          </router-view>
       </div>
     </main>
   </div>
 </template>
 
-<style scoped>
-.font-sans {
-  font-family: "Inter", sans-serif;
+<style>
+.hidden-scrollbar::-webkit-scrollbar { display: none; }
+.hidden-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 </style>

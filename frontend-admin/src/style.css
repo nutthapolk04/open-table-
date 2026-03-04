@@ -1,22 +1,47 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --font-family: "Inter", system-ui, -apple-system, sans-serif;
+  --font-outfit: 'Outfit', sans-serif;
 }
 
 body {
-  font-family: var(--font-family);
-  @apply bg-slate-50 text-slate-900;
+  font-family: var(--font-outfit);
+  @apply text-slate-900 bg-[#f8fafc];
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-300;
-}
-
-.btn-primary {
-  @apply px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors cursor-pointer;
+  @apply bg-white border border-slate-200/60 rounded-3xl transition-all duration-300;
 }
 
 .glass {
-  @apply bg-white/70 backdrop-blur-lg border border-white/20;
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+}
+
+.btn-primary {
+  @apply px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-indigo-300 transition-all active:scale-95;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium;
+}
+
+/* Animations */
+.fade-up {
+  @apply animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }

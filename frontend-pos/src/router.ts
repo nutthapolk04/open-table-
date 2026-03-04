@@ -8,9 +8,19 @@ const routes = [
     component: () => import("./views/TablesView.vue"),
   },
   {
-    path: "/order",
+    path: "/order/:id",
     name: "order",
     component: () => import("./views/OrderView.vue"),
+  },
+  {
+    path: "/kitchen",
+    name: "kitchen",
+    component: () => import("./views/KitchenView.vue"),
+  },
+  {
+    path: "/settings",
+    name: "settings",
+    component: () => import("./views/SettingsView.vue"),
   },
 ];
 

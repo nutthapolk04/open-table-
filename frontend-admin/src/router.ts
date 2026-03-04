@@ -1,32 +1,31 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
-  { path: "/", redirect: "/dashboard" },
-  {
-    path: "/dashboard",
-    name: "dashboard",
-    component: () => import("./App.vue"), // Temporarily using App.vue as a layout or view
-  },
-  {
-    path: "/menu",
-    name: "menu",
-    component: () => import("./App.vue"),
-  },
-  {
-    path: "/zones",
-    name: "zones",
-    component: () => import("./App.vue"),
-  },
-  {
-    path: "/settings",
-    name: "settings",
-    component: () => import("./App.vue"),
-  },
+    {
+        path: "/",
+        name: "Dashboard",
+        component: () => import("./views/Dashboard.vue")
+    },
+    {
+        path: "/floor-plan",
+        name: "Floor Plan",
+        component: () => import("./views/FloorPlan.vue")
+    },
+    {
+        path: "/menu",
+        name: "Menu & Buffet",
+        component: () => import("./views/MenuManagement.vue")
+    },
+    {
+        path: "/settings",
+        name: "Settings",
+        component: () => import("./views/Dashboard.vue") // Temporary reuse
+    },
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes,
+    history: createWebHistory(),
+    routes,
 });
 
 export default router;

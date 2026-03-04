@@ -16,10 +16,18 @@ router.post('/categories', menuController.createCategory);
 router.get('/tiers', menuController.getTiers);
 router.post('/tiers', menuController.createTier);
 router.post('/menus', menuController.createMenu);
+router.patch('/menus/:id/status', menuController.updateMenuStatus);
 
 // Session & Order Routes
+router.get('/sessions/:id', sessionController.getSessionById);
 router.post('/sessions/open', sessionController.openSession);
 router.post('/sessions/close', sessionController.closeSession);
 router.post('/orders', sessionController.placeOrder);
+router.post('/orders/void', sessionController.voidOrderItem);
+router.patch('/orders/status', sessionController.updateOrderStatus);
+router.post('/sessions/move', sessionController.moveSession);
+router.post('/sessions/merge', sessionController.mergeSessions);
+
+router.get('/tiers/:id/menu', menuController.getTierMenu);
 
 module.exports = router;

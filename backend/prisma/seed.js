@@ -31,10 +31,10 @@ async function main() {
 
     // Create Buffet Tiers
     const tierStandard = await prisma.buffetTier.create({
-        data: { name: 'Standard', price: 299, description: 'Basic buffet' }
+        data: { name: 'Standard', price: 299, duration: 90, description: 'Basic buffet' }
     });
     const tierPremium = await prisma.buffetTier.create({
-        data: { name: 'Premium', price: 499, description: 'Premium selection' }
+        data: { name: 'Premium', price: 499, duration: 120, description: 'Premium selection' }
     });
 
     // Create Menus

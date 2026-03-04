@@ -68,3 +68,35 @@ exports.createMenu = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+exports.getTierMenu = async (req, res) => {
+    const prisma = req.app.get('prisma');
+    try {
+        const tier = await prisma.buffetTier.findUnique({
+            where: { id: req.params.id },
+            include: {
+                menus: {
+                    include: { category: true }
+                }
+            }
+        });
+        if (!tier) return res.status(404).json({ error: 'Tier not found' });
+        res.json(tier.menus);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.updateMenuStatus = async (req, res) => {
+    const prisma = req.app.get('prisma');
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+        const menu = await prisma.menu.update({
+            where: { id },
+            data: { status }
+        });
+        res.json(menu);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

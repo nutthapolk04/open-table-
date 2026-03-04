@@ -1,11 +1,13 @@
 import { defineStore } from "pinia";
 import api from "../api";
+import { io, Socket } from "socket.io-client";
 
 export interface OrderItem {
   id: string;
   name: string;
   price: number;
   qty: number;
+  note?: string;
 }
 
 export interface Table {
@@ -16,6 +18,7 @@ export interface Table {
   time?: string;
   pax?: number;
   orders: OrderItem[];
+  rawOrders?: any[];
   timeSeated?: string;
   sessionId?: string;
   tierId?: string;
@@ -35,6 +38,7 @@ export interface MenuItem {
   category: string;
   price: number;
   image: string;
+  status?: "AVAILABLE" | "SOLD_OUT";
 }
 
 export interface Session {
@@ -50,11 +54,13 @@ export const usePosStore = defineStore("pos", {
   state: () => ({
     tables: [] as Table[],
     tiers: [] as Tier[],
+    zones: [] as { id: string, name: string }[],
     categories: [] as { id: string, name: string }[],
     menuItems: [] as MenuItem[],
     activeTableId: null as string | null,
     loading: false,
     error: null as string | null,
+    socket: null as Socket | null,
   }),
   getters: {
     activeTable: (state) =>
@@ -65,27 +71,32 @@ export const usePosStore = defineStore("pos", {
   actions: {
     async fetchInitialData() {
       this.loading = true;
+      this.error = null;
       try {
-        const [tablesRes, tiersRes, categoriesRes] = await Promise.all([
-          api.get("/tables"),
-          api.get("/tiers"),
-          api.get("/categories"),
+        // Individual fetches to be resilient
+        const fetchRes = async (url: string) => {
+          try { return await api.get(url); }
+          catch (e) { console.warn(`Failed to fetch ${url}`, e); return { data: [] }; }
+        };
+
+        const [tablesRes, tiersRes, categoriesRes, zonesRes] = await Promise.all([
+          fetchRes("/tables"),
+          fetchRes("/tiers"),
+          fetchRes("/categories"),
+          fetchRes("/zones"),
         ]);
 
-        this.tables = tablesRes.data.map((t: any) => {
-          const activeSession = t.sessions && t.sessions[0];
+        this.initSocket();
 
-          // Flatten orders from session
+        this.tables = (tablesRes.data || []).map((t: any) => {
+          const activeSession = t.sessions && t.sessions[0];
           const flattenedOrders: OrderItem[] = [];
           if (activeSession && activeSession.orders) {
             activeSession.orders.forEach((order: any) => {
               order.items.forEach((item: any) => {
-                const existing = flattenedOrders.find(
-                  (o) => o.id === item.menu.id,
-                );
-                if (existing) {
-                  existing.qty += item.quantity;
-                } else {
+                const existing = flattenedOrders.find((o) => o.id === item.menu.id);
+                if (existing) { existing.qty += item.quantity; }
+                else {
                   flattenedOrders.push({
                     id: item.menu.id,
                     name: item.menu.name,
@@ -101,29 +112,23 @@ export const usePosStore = defineStore("pos", {
             id: t.id,
             number: t.number,
             status: t.status,
-            zone: t.zone.name,
+            zone: t.zone?.name || "No Zone",
             pax: activeSession?.customerCount,
             sessionId: activeSession?.id,
             tierId: activeSession?.tierId,
             orders: flattenedOrders,
-            timeSeated: activeSession?.startTime
-              ? new Date(activeSession.startTime).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-              : undefined,
-            time: activeSession?.startTime
-              ? `${Math.floor((new Date().getTime() - new Date(activeSession.startTime).getTime()) / 60000)} min`
-              : undefined,
+            rawOrders: activeSession?.orders || [],
+            timeSeated: activeSession?.startTime ? new Date(activeSession.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined,
+            time: activeSession?.startTime ? `${Math.floor((new Date().getTime() - new Date(activeSession.startTime).getTime()) / 60000)} min` : undefined,
           };
         });
 
-        this.tiers = tiersRes.data;
-        this.categories = categoriesRes.data.map((c: any) => ({ id: c.id, name: c.name }));
+        this.tiers = tiersRes.data || [];
+        this.categories = (categoriesRes.data || []).map((c: any) => ({ id: c.id, name: c.name }));
+        this.zones = (zonesRes.data || []).map((z: any) => ({ id: z.id, name: z.name }));
 
-        // Flatten menus from categories for POS
         const allItems: MenuItem[] = [];
-        categoriesRes.data.forEach((cat: any) => {
+        (categoriesRes.data || []).forEach((cat: any) => {
           cat.menus.forEach((m: any) => {
             allItems.push({
               id: m.id,
@@ -131,16 +136,32 @@ export const usePosStore = defineStore("pos", {
               price: m.price,
               categoryId: cat.id,
               category: cat.name,
-              image: "🍽️", // Default fallback
+              image: "🍽️",
+              status: m.status || "AVAILABLE",
             });
           });
         });
         this.menuItems = allItems;
       } catch (err: any) {
-        this.error = err.message;
+        console.error("Critical Fetch Error:", err);
+        this.error = "Technical error while loading data.";
       } finally {
         this.loading = false;
       }
+    },
+    initSocket() {
+      if (this.socket) return;
+
+      const socketUrl = "http://localhost:3000"; // Should use env
+      this.socket = io(socketUrl);
+
+      this.socket.on("table-moved", () => this.fetchInitialData());
+      this.socket.on("table-merged", () => this.fetchInitialData());
+      this.socket.on("new-order", () => this.fetchInitialData());
+      this.socket.on("order-status-updated", () => this.fetchInitialData());
+      this.socket.on("order-voided", () => this.fetchInitialData());
+      this.socket.on("session-opened", () => this.fetchInitialData());
+      this.socket.on("session-closed", () => this.fetchInitialData());
     },
     setActiveTable(id: string | null) {
       this.activeTableId = id;
@@ -177,6 +198,56 @@ export const usePosStore = defineStore("pos", {
         await this.fetchInitialData(); // Refresh state to show newly ordered items
       } catch (err: any) {
         this.error = err.message;
+      }
+    },
+    async updateOrderStatus(orderId: string, status: string) {
+      try {
+        await api.patch("/orders/status", {
+          orderId,
+          status,
+        });
+        await this.fetchInitialData();
+      } catch (err: any) {
+        this.error = err.message;
+      }
+    },
+    async voidOrderItem(sessionId: string, menuId: string, quantity: number = 1) {
+      try {
+        await api.post("/orders/void", {
+          sessionId,
+          menuId,
+          quantity,
+        });
+        await this.fetchInitialData();
+      } catch (err: any) {
+        this.error = err.message;
+      }
+    },
+    async toggleMenuStatus(menuId: string, currentStatus: string) {
+      const newStatus = currentStatus === "AVAILABLE" ? "SOLD_OUT" : "AVAILABLE";
+      try {
+        await api.patch(`/menus/${menuId}/status`, { status: newStatus });
+        await this.fetchInitialData();
+      } catch (err: any) {
+        this.error = err.message;
+      }
+    },
+    async moveTable(sessionId: string, newTableId: string) {
+      try {
+        await api.post("/sessions/move", { sessionId, newTableId });
+        await this.fetchInitialData();
+      } catch (err: any) {
+        this.error = err.message;
+        throw err;
+      }
+    },
+    async mergeTables(sourceSessionId: string, targetSessionId: string) {
+      try {
+        await api.post("/sessions/merge", { sourceSessionId, targetSessionId });
+        await this.fetchInitialData();
+      } catch (err: any) {
+        this.error = err.message;
+        throw err;
       }
     },
   },

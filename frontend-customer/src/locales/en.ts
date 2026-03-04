@@ -1,0 +1,26 @@
+export default {
+    customerApp: {
+        table: 'Table',
+        timeLeft: 'Time Left',
+        tier: 'Tier',
+        hotPotSelection: 'Hot Pot Selection',
+        addToCart: 'Add to Cart',
+        yourOrder: 'Your Order',
+        itemsAdded: 'Items Added',
+        viewCart: 'View Cart',
+        orderDetails: 'Order Details',
+        callStaff: 'Call Staff',
+        loading: 'Loading session...',
+        error: 'Error loading session',
+        orderSuccess: 'Order sent successfully!',
+        staffNotified: 'Staff has been notified!',
+        all: 'All',
+        invalidSession: 'Invalid Session',
+        pleaseScanQR: 'Please scan the QR Code on your table.',
+        reviewOrder: 'Review Order',
+        totalItems: 'total items',
+        sendOrderToKitchen: 'Send Order to Kitchen',
+        outOfStock: 'OUT OF STOCK',
+        soldOut: 'Sold Out'
+    }
+}

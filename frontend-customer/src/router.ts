@@ -1,17 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-    { path: '/', redirect: '/order' },
+    { path: '/', redirect: '/table/demo' },
     {
-        path: '/order',
+        path: '/table/:sessionId',
         name: 'order',
-        component: () => import('./App.vue')
+        component: () => import('./views/OrderView.vue')
     },
-    {
-        path: '/history',
-        name: 'history',
-        component: () => import('./App.vue')
-    }
+    // Catch-all to prevent blank screen
+    { path: '/:pathMatch(.*)*', redirect: '/table/demo' }
 ]
 
 const router = createRouter({

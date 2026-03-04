@@ -2,7 +2,7 @@
 import { onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Monitor, RotateCw, LogOut, Globe } from "lucide-vue-next";
+import { Monitor, RotateCw, LogOut, Globe, ChefHat } from "lucide-vue-next";
 import { usePosStore } from "./stores/pos";
 
 const route = useRoute();
@@ -10,6 +10,7 @@ const { t, locale } = useI18n();
 const store = usePosStore();
 
 onMounted(() => {
+  console.log("POS App Initialized - Path:", route.path);
   store.fetchInitialData();
 });
 
@@ -35,17 +36,56 @@ const handleSync = () => {
 
 <template>
   <div class="flex flex-col h-screen bg-slate-100 font-sans">
-    <!-- Header -->
+    <!-- Header (Hide for kitchen as it has its own) -->
     <header
+      v-if="route.path !== '/kitchen'"
       class="bg-indigo-700 text-white p-4 shadow-md flex justify-between items-center z-10"
     >
-      <div class="flex items-center space-x-3">
-        <Monitor class="w-6 h-6" />
-        <h1 class="text-xl font-bold tracking-tight uppercase">
-          {{ getPageTitle() }}
-        </h1>
+      <div class="flex items-center space-x-6">
+        <div class="flex items-center space-x-2 mr-4">
+          <Monitor class="w-6 h-6" />
+          <h1 class="text-xl font-bold tracking-tight uppercase">
+            {{ getPageTitle() }}
+          </h1>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <nav class="hidden md:flex bg-indigo-800/50 rounded-lg p-1">
+          <router-link 
+            to="/tables" 
+            class="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
+            :class="route.path.startsWith('/tables') || route.path.startsWith('/order') ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-200 hover:text-white'"
+          >
+            POS System
+          </router-link>
+          <router-link 
+            to="/kitchen" 
+            class="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
+            :class="route.path === '/kitchen' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-200 hover:text-white'"
+          >
+            Kitchen (KDS)
+          </router-link>
+          <router-link 
+            to="/settings" 
+            class="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
+            :class="route.path === '/settings' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-200 hover:text-white'"
+          >
+            Admin Settings
+          </router-link>
+        </nav>
       </div>
+      
       <div class="flex items-center space-x-4">
+        <!-- Add Kitchen Quick Link for Mobile -->
+        <router-link 
+          v-if="route.path !== '/kitchen'"
+          to="/kitchen" 
+          class="md:hidden p-2 bg-indigo-600 rounded-lg"
+          title="Go to Kitchen"
+        >
+          <ChefHat class="w-5 h-5" />
+        </router-link>
+
         <button
           @click="toggleLanguage"
           class="flex items-center text-white/80 hover:text-white transition-colors"
