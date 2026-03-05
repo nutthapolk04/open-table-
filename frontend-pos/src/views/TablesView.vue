@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X } from "lucide-vue-next";
@@ -26,7 +26,10 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getStatusLabel = (status: string) => status.replace("_", " ");
+const getStatusLabel = (status: string) => {
+  const key = `posModule.status.${status}`;
+  return t(key);
+};
 
 // Active Table interaction
 const activeTable = computed(() => store.activeTable);
@@ -41,7 +44,6 @@ onMounted(() => {
 });
 
 // Watch tiers for changes (if they load after mount)
-import { watch, onMounted } from "vue";
 watch(
   () => store.tiers,
   (newTiers) => {
@@ -111,6 +113,17 @@ const tablesByZone = computed(() => {
   return groups;
 });
 
+// Zone expansion state
+const TABLES_PER_ZONE = 5;
+
+const goToZoneTables = (zone: string) => {
+  router.push(`/tables/zone/${encodeURIComponent(zone)}`);
+};
+
+const getVisibleTables = (tables: any[]) => {
+  return tables.slice(0, TABLES_PER_ZONE);
+};
+
 // Move & Merge Logics
 const showMoveModal = ref(false);
 const showMergeModal = ref(false);
@@ -155,7 +168,7 @@ const confirmMergeTable = async () => {
 </script>
 
 <template>
-  <div class="flex-1 flex overflow-hidden">
+  <div class="h-full flex" style="overflow: hidden;">
     <div class="flex-1 p-8 overflow-y-auto hidden-scrollbar">
       <div class="flex justify-between items-center mb-8">
         <div>
@@ -183,9 +196,12 @@ const confirmMergeTable = async () => {
             <span class="w-8 h-px bg-slate-200 mr-4"></span>
             {{ zone }}
             <span class="ml-3 text-xs font-medium text-slate-300">({{ tables.length }} Tables)</span>
+            <button v-if="tables.length > TABLES_PER_ZONE" @click="goToZoneTables(zone as string)" class="ml-4 px-4 py-1.5 text-xs font-bold bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-all active:scale-95">
+              ดูโต๊ะทั้งหมด ({{ tables.length }})
+            </button>
           </h3>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            <div v-for="table in tables" :key="table.id" class="card group cursor-pointer hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300 relative border-2 bg-white rounded-xl shadow-sm overflow-hidden" :class="activeTable?.id === table.id ? 'border-indigo-500' : 'border-slate-100'" @click="setActiveTable(table.id)">
+            <div v-for="table in getVisibleTables(tables)" :key="table.id" class="card group cursor-pointer hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300 relative border-2 bg-white rounded-xl shadow-sm overflow-hidden" :class="activeTable?.id === table.id ? 'border-indigo-500' : 'border-slate-100'" @click="setActiveTable(table.id)">
               <div class="p-6">
                 <div class="flex justify-between items-start mb-4">
                   <span class="text-2xl font-black transition-colors" :class="activeTable?.id === table.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'">{{ table.number }}</span>
@@ -202,13 +218,13 @@ const confirmMergeTable = async () => {
         </div>
       </div>
     </div>
-    <aside class="w-96 bg-white border-l border-slate-200 flex flex-col shadow-2xl shrink-0">
+    <aside class="w-96 bg-white border-l border-slate-200 shadow-2xl" style="display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;">
       <div v-if="!activeTable" class="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400">
         <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6"><Monitor class="w-10 h-10 opacity-20" /></div>
         <h3 class="text-lg font-bold text-slate-800 mb-2">{{ t("posModule.selectATable") }}</h3>
         <p class="text-sm">{{ t("posModule.tapToView") }}</p>
       </div>
-      <div v-else class="flex-1 flex flex-col">
+      <div v-else style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
         <div class="p-8 border-b border-slate-100 bg-slate-50/50">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-3xl font-black text-slate-800">{{ t("posModule.table") }} {{ activeTable?.number }}</h3>
@@ -216,7 +232,7 @@ const confirmMergeTable = async () => {
           </div>
           <p class="text-sm font-medium text-slate-500">{{ activeTable?.zone }} {{ t("posModule.zone") }}</p>
         </div>
-        <div class="flex-1 p-8 space-y-6">
+        <div class="p-8 space-y-6 custom-scrollbar" style="flex: 1; overflow-y: auto; min-height: 0;">
           <div v-if="activeTable.status === 'FREE' || activeTable.status === 'CLEANING'" class="space-y-4">
             <button @click="openTable" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-14 flex items-center justify-center space-x-3 text-lg font-bold shadow-md transition-all active:scale-95">
               <UserPlus class="w-6 h-6" />
@@ -340,6 +356,29 @@ const confirmMergeTable = async () => {
 </template>
 
 <style>
+.hidden-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hidden-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom Scrollbar for Sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
 @media print {
   body * { visibility: hidden !important; }
   .print\:block, .print\:block * { visibility: visible !important; }

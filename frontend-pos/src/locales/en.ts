@@ -65,5 +65,11 @@ export default {
     mergeSuccess: "Tables merged successfully",
     cannotMergeSelf: "Cannot merge a table into itself",
     noTablesAvailable: "No tables available for this action",
+    status: {
+      FREE: "Available",
+      OCCUPIED: "Occupied",
+      CHECKING_BILL: "Checking Bill",
+      CLEANING: "Cleaning"
+    }
   },
 };

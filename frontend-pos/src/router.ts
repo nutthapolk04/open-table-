@@ -8,6 +8,11 @@ const routes = [
     component: () => import("./views/TablesView.vue"),
   },
   {
+    path: "/tables/zone/:zone",
+    name: "zone-tables",
+    component: () => import("./views/ZoneTablesView.vue"),
+  },
+  {
     path: "/order/:id",
     name: "order",
     component: () => import("./views/OrderView.vue"),

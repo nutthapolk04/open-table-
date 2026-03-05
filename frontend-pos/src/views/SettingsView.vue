@@ -39,19 +39,39 @@ onMounted(() => {
 // Zone & Table Forms
 const zoneName = ref('');
 const addZone = async () => {
-    if (!zoneName.value) return;
-    await api.post('/zones', { name: zoneName.value });
-    zoneName.value = '';
-    fetchData();
+    if (!zoneName.value) {
+        alert('กรุณาใส่ชื่อโซน');
+        return;
+    }
+    try {
+        console.log('Creating zone:', zoneName.value);
+        const res = await api.post('/zones', { name: zoneName.value });
+        console.log('Zone created:', res.data);
+        zoneName.value = '';
+        await fetchData();
+    } catch (err: any) {
+        console.error('Failed to create zone:', err);
+        alert('ไม่สามารถสร้างโซนได้: ' + (err?.response?.data?.error || err.message));
+    }
 };
 
 const tableName = ref('');
 const tableZoneId = ref('');
 const addTable = async () => {
-    if (!tableName.value || !tableZoneId.value) return;
-    await api.post('/tables', { number: tableName.value, zoneId: tableZoneId.value });
-    tableName.value = '';
-    fetchData();
+    if (!tableName.value || !tableZoneId.value) {
+        alert('กรุณาใส่หมายเลขโต๊ะและเลือกโซน');
+        return;
+    }
+    try {
+        console.log('Creating table:', tableName.value, 'in zone:', tableZoneId.value);
+        const res = await api.post('/tables', { number: tableName.value, zoneId: tableZoneId.value });
+        console.log('Table created:', res.data);
+        tableName.value = '';
+        await fetchData();
+    } catch (err: any) {
+        console.error('Failed to create table:', err);
+        alert('ไม่สามารถสร้างโต๊ะได้: ' + (err?.response?.data?.error || err.message));
+    }
 };
 
 // Tier Forms

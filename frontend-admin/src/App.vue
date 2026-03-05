@@ -127,8 +127,4 @@ const navItems = [
   opacity: 0;
   transform: translateY(-20px);
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 </style>

@@ -119,10 +119,10 @@ const handleSync = () => {
     </header>
 
     <!-- Main Wrapper -->
-    <main class="flex-1 w-full h-full overflow-hidden">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
+    <main class="flex-1 overflow-hidden flex flex-col">
+      <router-view v-slot="{ Component }" class="flex-1 flex flex-col overflow-hidden">
+        <transition name="fade" mode="out-in" class="flex-1 flex flex-col overflow-hidden">
+          <component :is="Component" class="flex-1 overflow-hidden" />
         </transition>
       </router-view>
     </main>

@@ -65,5 +65,11 @@ export default {
     mergeSuccess: "รวมโต๊ะเรียบร้อยแล้ว",
     cannotMergeSelf: "ไม่สามารถรวมโต๊ะเข้ากับตัวเองได้",
     noTablesAvailable: "ไม่มีโต๊ะว่างสำหรับการดำเนินการนี้",
+    status: {
+      FREE: "ว่าง",
+      OCCUPIED: "มีลูกค้า",
+      CHECKING_BILL: "รอเช็คบิล",
+      CLEANING: "รอทำความสะอาด"
+    }
   },
 };
