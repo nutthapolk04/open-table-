@@ -7,32 +7,31 @@ import {
   Clock, 
   CheckCircle2, 
   Timer, 
-  ChevronRight, 
-  AlertCircle,
   LayoutGrid,
   History,
-  ArrowRightCircle
+  ArrowRightCircle,
+  Bell,
+  UtensilsCrossed,
+  Info,
+  Flame
 } from "lucide-vue-next";
 
 const store = usePosStore();
 const { t } = useI18n();
 
 const filter = ref<"active" | "history">("active");
-
-// Timer for auto-refresh and card ages
-let timer: number | null = null;
 const now = ref(Date.now());
+let timeUpdater: number | null = null;
 
 onMounted(() => {
   store.fetchInitialData();
-  timer = window.setInterval(() => {
-    store.fetchInitialData(); // Polling for new orders
+  timeUpdater = window.setInterval(() => {
     now.value = Date.now();
-  }, 10000); // 10s polling
+  }, 30000); 
 });
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer);
+  if (timeUpdater) clearInterval(timeUpdater);
 });
 
 // Calculate orders from all sessions
@@ -51,7 +50,6 @@ const allKitchenOrders = computed(() => {
     }
   });
 
-  // Sort by created time (oldest first)
   return orders.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 });
 
@@ -60,39 +58,41 @@ const activeOrders = computed(() => {
 });
 
 const servedOrders = computed(() => {
-  return allKitchenOrders.value.filter(o => o.status === 'SERVED').reverse().slice(0, 20); // Last 20
+  return allKitchenOrders.value.filter(o => o.status === 'SERVED').reverse().slice(0, 50);
 });
 
 const getElapsedTime = (timeStr: string) => {
-  const diff = Math.floor((now.value - new Date(timeStr).getTime()) / 60000);
-  return diff;
+  return Math.floor((now.value - new Date(timeStr).getTime()) / 60000);
 };
 
-const getAgeColor = (minutes: number) => {
-  if (minutes < 5) return "text-emerald-400";
-  if (minutes < 15) return "text-amber-400";
-  return "text-rose-400 animate-pulse";
+const getAgeSeverity = (minutes: number) => {
+  if (minutes < 10) return "low";
+  if (minutes < 20) return "medium";
+  return "high";
 };
 
 const getStatusConfig = (status: string) => {
   switch (status) {
     case 'PENDING': return { 
-      label: t('kitchenModule.status.pending'), 
-      bg: 'bg-rose-500/10 border-rose-500/50 text-rose-400', 
+      label: "รอปรุง", 
+      bg: 'bg-rose-500 text-white', 
       next: 'COOKING',
-      nextLabel: t('kitchenModule.status.startCook')
+      nextLabel: "เริ่มทำอาหาร",
+      icon: Clock
     };
     case 'COOKING': return { 
-      label: t('kitchenModule.status.cooking'), 
-      bg: 'bg-amber-500/10 border-amber-500/50 text-amber-400', 
+      label: "กำลังปรุง", 
+      bg: 'bg-amber-500 text-white', 
       next: 'SERVED',
-      nextLabel: t('kitchenModule.status.doneServe')
+      nextLabel: "ปรุงเสร็จแล้ว",
+      icon: Flame
     };
     default: return { 
-      label: t('kitchenModule.status.served'), 
-      bg: 'bg-emerald-500/10 text-emerald-400', 
+      label: "เสิร์ฟแล้ว", 
+      bg: 'bg-emerald-500 text-white', 
       next: 'SERVED', 
-      nextLabel: t('kitchenModule.status.completed') 
+      nextLabel: "เสร็จสิ้น",
+      icon: CheckCircle2
     };
   }
 };
@@ -104,183 +104,256 @@ const handleStatusCycle = async (orderId: string, currentStatus: string) => {
   }
 };
 
-const getCardStyle = (order: any) => {
-  const pendingElapsed = getElapsedTime(order.createdAt);
-  const cookingElapsed = getElapsedTime(order.updatedAt || order.createdAt);
-  
-  if (order.status === 'COOKING') {
-    if (cookingElapsed > 15) {
-      return "bg-amber-100 border-amber-300 animate-pulse shadow-[0_0_30px_rgba(251,191,36,0.4)]";
-    }
-    return "bg-amber-50 border-amber-200";
+// UI Color Logic for Cards
+const getCardClasses = (order: any) => {
+  const minutes = getElapsedTime(order.createdAt);
+  const severity = getAgeSeverity(minutes);
+  const status = order.status;
+
+  let classes = "relative rounded-[40px] overflow-hidden flex flex-col transition-all duration-500 border-2 ";
+
+  if (status === 'COOKING') {
+    classes += "bg-amber-50/80 border-amber-200 shadow-amber-100 ";
+  } else if (severity === 'high') {
+    classes += "bg-rose-50 border-rose-200 shadow-rose-200 animate-pulse-subtle ";
+  } else if (severity === 'medium') {
+    classes += "bg-orange-50/50 border-orange-200 shadow-orange-100 ";
+  } else {
+    classes += "bg-white border-slate-200/60 shadow-slate-200/50 ";
   }
-  
-  if (order.status === 'PENDING' && pendingElapsed > 15) {
-    return "bg-rose-50 border-rose-200 animate-pulse shadow-[0_0_30px_rgba(251,113,133,0.4)]";
-  }
-  
-  return "bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md";
+
+  return classes;
 };
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500/30">
-    <!-- Header -->
-    <header class="h-20 border-b border-slate-200 bg-white/80 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 z-10">
-      <div class="flex items-center space-x-4">
-        <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
-          <ChefHat class="w-6 h-6 text-white" />
+  <div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-indigo-500/30">
+    <!-- Premium Header -->
+    <header class="h-24 border-b border-slate-200 bg-white/70 backdrop-blur-3xl flex items-center justify-between px-10 sticky top-0 z-50">
+      <div class="flex items-center space-x-6">
+        <div class="relative">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center shadow-xl shadow-indigo-200 rotate-3 transition-transform">
+                <ChefHat class="w-7 h-7 text-white" />
+            </div>
+            <div class="absolute -top-1 -right-1 w-6 h-6 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black text-white shadow-lg" v-if="activeOrders.length > 0">
+                {{ activeOrders.length }}
+            </div>
         </div>
         <div>
-          <h1 class="text-xl font-black tracking-tight uppercase text-slate-800">{{ t('kitchenModule.title') }}</h1>
-          <div class="flex items-center text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-ping"></span>
-            {{ t('kitchenModule.subtitle') }}
+          <h1 class="text-2xl font-[950] tracking-tight text-slate-800 italic uppercase">ครัวกลาง <span class="text-indigo-600">KDS</span></h1>
+          <div class="flex items-center text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+            สถานะระบบ: ออนไลน์
           </div>
         </div>
       </div>
 
-      <!-- Controls -->
-      <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+      <!-- Navigation Tabs -->
+      <div class="flex bg-slate-100 p-1.5 rounded-[24px] border border-slate-200/50 shadow-inner">
         <button 
           @click="filter = 'active'"
-          class="px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center"
-          :class="filter === 'active' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-white'"
+          class="px-8 py-3 rounded-2xl font-[900] text-xs uppercase tracking-widest transition-all flex items-center group"
+          :class="filter === 'active' ? 'bg-white text-indigo-600 shadow-xl shadow-slate-200' : 'text-slate-500 hover:text-slate-800'"
         >
-          <LayoutGrid class="w-4 h-4 mr-2" />
-          {{ t('kitchenModule.activeOrders') }} ({{ activeOrders.length }})
+          <LayoutGrid class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+          ออเดอร์ค้าง ({{ activeOrders.length }})
         </button>
         <button 
           @click="filter = 'history'"
-          class="px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center"
-          :class="filter === 'history' ? 'bg-white text-slate-800 shadow-md border border-slate-200' : 'text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent'"
+          class="px-8 py-3 rounded-2xl font-[900] text-xs uppercase tracking-widest transition-all flex items-center group ml-1"
+          :class="filter === 'history' ? 'bg-white text-slate-800 shadow-xl shadow-slate-200 border border-slate-200/50' : 'text-slate-500 hover:text-slate-800'"
         >
-          <History class="w-4 h-4 mr-2" />
-          {{ t('kitchenModule.history') }}
+          <History class="w-4 h-4 mr-2 group-hover:rotate-[-45deg] transition-transform" />
+          เสิร์ฟแล้ว
         </button>
       </div>
 
-      <!-- System Stats -->
-      <div class="hidden lg:flex items-center space-x-6 text-xs font-bold">
-        <div class="flex flex-col items-end">
-          <span class="text-slate-500 uppercase tracking-widest text-[9px]">{{ t('kitchenModule.serverTime') }}</span>
-          <span class="text-indigo-600 font-mono text-sm leading-none mt-1">{{ new Date(now).toLocaleTimeString() }}</span>
+      <!-- Stats context -->
+      <div class="flex items-center space-x-6">
+        <div class="hidden xl:flex flex-col items-end">
+            <span class="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none">เวลาปัจจุบัน</span>
+            <span class="text-slate-800 font-mono text-xl font-black mt-1">{{ new Date(now).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) }}</span>
         </div>
+        <div class="w-px h-10 bg-slate-200 mx-2"></div>
+        <button class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm">
+            <Bell class="w-5 h-5" />
+        </button>
       </div>
     </header>
 
-    <main class="p-8">
-      <!-- Active Orders Grid -->
-      <div v-if="filter === 'active'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xxl:grid-cols-5 gap-6">
-        <div 
-          v-for="order in activeOrders" 
-          :key="order.id"
-          class="group rounded-3xl overflow-hidden flex flex-col shadow-xl transition-all hover:scale-[1.02] border"
-          :class="getCardStyle(order)"
+    <main class="p-10">
+      <!-- Active Orders Flow -->
+      <div v-if="filter === 'active'" class="flex flex-col">
+        <transition-group 
+            name="list" 
+            tag="div" 
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8"
         >
-          <!-- Card Header -->
-          <div class="p-5 flex justify-between items-start border-b border-slate-100">
-            <div>
-              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                {{ order.zone }} • {{ t('kitchenModule.tablePrefix') }}
-              </span>
-              <h2 class="text-3xl font-black text-slate-800 italic">#{{ order.tableNumber }}</h2>
+          <div 
+            v-for="order in activeOrders" 
+            :key="order.id"
+            :class="getCardClasses(order)"
+            class="shadow-2xl hover:scale-[1.03] hover:-translate-y-2 group"
+          >
+            <!-- Large Floating Table Number (Watermark style) -->
+            <div class="absolute -right-4 -top-8 text-[120px] font-[1000] text-black/[0.03] italic select-none pointer-events-none group-hover:text-indigo-600/[0.05] transition-colors">
+                {{ order.tableNumber }}
             </div>
-            <div class="flex flex-col items-end">
-              <div :class="getStatusConfig(order.status).bg" class="px-3 py-1 rounded-full text-[9px] font-black border uppercase tracking-widest">
-                {{ getStatusConfig(order.status).label }}
-              </div>
-              <div class="flex items-center mt-2 text-xs font-black" :class="getAgeColor(getElapsedTime(order.createdAt))">
-                <Timer class="w-3 h-3 mr-1" />
-                {{ getElapsedTime(order.createdAt) }}m
-              </div>
-            </div>
-          </div>
 
-          <!-- Items List -->
-          <div class="flex-1 p-5 space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
-            <div v-for="item in order.items" :key="item.id" class="flex items-start group/item">
-              <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-black mr-3 group-hover/item:bg-indigo-600 group-hover/item:text-white transition-colors">
-                {{ item.quantity }}
-              </div>
-              <div class="flex-1">
-                <p class="text-lg font-bold leading-tight text-slate-800 group-hover/item:text-indigo-900">{{ item.menu.name }}</p>
-                <div v-if="item.note" class="mt-1 flex items-center text-amber-700 bg-amber-50 w-fit px-2 py-0.5 rounded text-[11px] font-medium border border-amber-200">
-                  <AlertCircle class="w-3 h-3 mr-1" />
-                  {{ item.note }}
+            <!-- Card Header -->
+            <div class="p-8 pb-6 border-b border-black/[0.03] relative z-10">
+                <!-- Top Row: Zone & Status -->
+                <div class="flex justify-between items-center mb-4">
+                    <span class="px-2.5 py-1 rounded-lg bg-black/5 text-black/60 text-[10px] font-[900] uppercase tracking-[0.15em] backdrop-blur-md">
+                        {{ order.zone }}
+                    </span>
+                    <div :class="getStatusConfig(order.status).bg" class="px-4 py-1.5 rounded-xl text-[10px] font-[1000] uppercase tracking-wider flex items-center shadow-lg">
+                        <component :is="getStatusConfig(order.status).icon" class="w-3.5 h-3.5 mr-2" />
+                        {{ getStatusConfig(order.status).label }}
+                    </div>
                 </div>
-              </div>
+
+                <!-- Bottom Row: Table & Timer -->
+                <div class="flex justify-between items-end">
+                    <h2 class="text-6xl font-[1000] text-slate-900 italic tracking-tighter leading-none">
+                        <span class="text-indigo-600">T</span>{{ order.tableNumber }}
+                    </h2>
+                    <div class="flex items-center text-sm font-[1000] font-mono px-4 py-2 rounded-2xl bg-white/60 border border-black/[0.05] shadow-sm mb-1" 
+                        :class="[
+                            getAgeSeverity(getElapsedTime(order.createdAt)) === 'high' ? 'text-rose-600' : 
+                            getAgeSeverity(getElapsedTime(order.createdAt)) === 'medium' ? 'text-orange-500' : 'text-slate-500'
+                        ]">
+                        <Timer class="w-4 h-4 mr-2" />
+                        {{ getElapsedTime(order.createdAt) }}m
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items List -->
+            <div class="flex-1 p-8 pt-6 space-y-6 custom-scrollbar overflow-y-auto max-h-[340px] relative z-10">
+                <div v-for="item in order.items" :key="item.id" class="flex items-start group/item bg-white/40 p-3 rounded-[24px] border border-transparent hover:border-white/60 hover:bg-white/80 transition-all shadow-sm hover:shadow-md">
+                    <div class="w-11 h-11 shrink-0 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl font-[1000] mr-5 shadow-lg shadow-indigo-100">
+                        {{ item.quantity }}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[19px] font-[900] leading-[1.1] text-slate-800 tracking-tight transition-colors uppercase italic">{{ item.menu.name }}</p>
+                        <div v-if="item.note" class="mt-3 text-rose-700 bg-rose-100/50 border-rose-200 border-2 p-3 rounded-2xl text-[11px] font-[900] flex items-center uppercase tracking-wider italic animate-in zoom-in-95">
+                            <Info class="w-4 h-4 mr-2 shrink-0" />
+                            <span class="underline decoration-2 decoration-rose-300">{{ item.note }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="p-6 pt-2 relative z-10">
+                <button 
+                    @click="handleStatusCycle(order.id, order.status)"
+                    class="w-full py-5 rounded-[28px] font-[1000] text-xs uppercase tracking-[0.3em] flex items-center justify-center transition-all shadow-xl active:scale-95 group/btn overflow-hidden relative border-b-4"
+                    :class="[
+                        order.status === 'PENDING' ? 'bg-indigo-600 border-indigo-800 text-white hover:bg-indigo-700' :
+                        'bg-emerald-500 border-emerald-700 text-white hover:bg-emerald-600'
+                    ]"
+                >
+                    <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-500"></div>
+                    <ArrowRightCircle v-if="order.status === 'PENDING'" class="w-5 h-5 mr-3 transition-transform group-hover/btn:translate-x-1" />
+                    <UtensilsCrossed v-else class="w-5 h-5 mr-3 transition-transform group-hover/btn:rotate-12" />
+                    {{ getStatusConfig(order.status).nextLabel }}
+                </button>
             </div>
           </div>
-
-          <!-- Card Actions -->
-          <div class="p-4 bg-slate-50/50 border-t border-slate-100">
-            <button 
-              @click="handleStatusCycle(order.id, order.status)"
-              class="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center transition-all bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg active:scale-95 group/btn"
-            >
-              <ArrowRightCircle v-if="order.status === 'PENDING'" class="w-5 h-5 mr-3 transition-transform group-hover/btn:translate-x-1" />
-              <CheckCircle2 v-else class="w-5 h-5 mr-3" />
-              {{ getStatusConfig(order.status).nextLabel }}
-            </button>
-          </div>
-        </div>
+        </transition-group>
 
         <!-- Empty State -->
-        <div v-if="activeOrders.length === 0" class="col-span-full py-32 flex flex-col items-center justify-center text-slate-400 animate-in fade-in zoom-in-50">
-          <ChefHat class="w-24 h-24 mb-6 opacity-30 text-indigo-200" />
-          <h2 class="text-2xl font-black uppercase tracking-widest opacity-40">{{ t('kitchenModule.emptyTitle') }}</h2>
-          <p class="text-slate-400 text-sm mt-2">{{ t('kitchenModule.emptySubtitle') }}</p>
+        <div v-if="activeOrders.length === 0" class="py-48 flex flex-col items-center justify-center text-slate-400 bg-white/50 rounded-[80px] border-[6px] border-dashed border-slate-200/50 animate-in fade-in zoom-in-95 shadow-inner mt-10">
+          <div class="w-40 h-40 bg-white rounded-full flex items-center justify-center mb-12 shadow-2xl border-8 border-slate-50 rotate-6 hover:rotate-0 transition-transform duration-700 overflow-hidden">
+            <ChefHat class="w-20 h-20 text-indigo-600 animate-bounce" />
+          </div>
+          <h2 class="text-4xl font-[1000] uppercase tracking-[0.4em] text-slate-300 italic">ครัวว่าง (IDLE)</h2>
+          <p class="text-slate-400 text-sm mt-5 font-black uppercase tracking-[0.2em] opacity-60">Ready for the next rush</p>
         </div>
       </div>
 
-      <div v-else class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-in slide-in-from-bottom-4">
-        <table class="w-full text-left">
-          <thead class="bg-slate-50 border-b border-slate-200">
-            <tr class="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-              <th class="px-6 py-4">{{ t('kitchenModule.tableHeaders.status') }}</th>
-              <th class="px-6 py-4">{{ t('kitchenModule.tableHeaders.table') }}</th>
-              <th class="px-6 py-4">{{ t('kitchenModule.tableHeaders.items') }}</th>
-              <th class="px-6 py-4">{{ t('kitchenModule.tableHeaders.timeCreated') }}</th>
-              <th class="px-6 py-4 text-right">{{ t('kitchenModule.tableHeaders.elapsed') }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 uppercase">
-            <tr v-for="order in servedOrders" :key="order.id" class="hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700">
-              <td class="px-6 py-4">
-                <span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-black">{{ t('kitchenModule.status.served') }}</span>
-              </td>
-              <td class="px-6 py-4 text-slate-900">#{{ order.tableNumber }} <span class="text-[9px] text-slate-400 ml-1">({{ order.zone }})</span></td>
-              <td class="px-6 py-4 text-slate-600">
-                {{ order.items.map((i: any) => `${i.quantity}x ${i.menu.name}`).join(", ") }}
-              </td>
-              <td class="px-6 py-4 text-slate-400">{{ new Date(order.createdAt).toLocaleTimeString() }}</td>
-              <td class="px-6 py-4 text-right text-slate-400">{{ getElapsedTime(order.createdAt) }}{{ t('kitchenModule.elapsedAgo') }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- History Table -->
+      <div v-else class="bg-white border-2 border-slate-200/60 rounded-[60px] overflow-hidden shadow-2xl shadow-slate-200/20 animate-in slide-in-from-bottom-12 duration-700">
+        <div class="p-12 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div>
+                <h3 class="text-3xl font-[1000] italic tracking-tighter uppercase text-slate-900">ออเดอร์ที่เสิร์ฟแล้ววันนี้</h3>
+                <div class="h-1.5 w-24 bg-indigo-600 rounded-full mt-3"></div>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="text-right">
+                    <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Served</p>
+                    <span class="text-3xl font-[1000] text-indigo-600 italic tracking-tighter">{{ servedOrders.length }} Items</span>
+                </div>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead class="bg-white">
+                <tr class="text-[11px] font-[1000] text-slate-400 uppercase tracking-[0.2em]">
+                  <th class="px-12 py-8 text-center w-36">ลำดับ</th>
+                  <th class="px-8 py-8 w-44">โต๊ะ (Table)</th>
+                  <th class="px-12 py-8">รายการอาหาร (Items)</th>
+                  <th class="px-12 py-8 text-center">เวลา (Time)</th>
+                  <th class="px-12 py-8 text-right">ดำเนินการ (Duration)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="(order, index) in servedOrders" :key="order.id" class="group/row hover:bg-indigo-50/30 transition-all duration-300">
+                  <td class="px-12 py-8 text-center">
+                    <span class="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-xs font-[1000] text-slate-400 group-hover/row:bg-indigo-600 group-hover/row:text-white transition-all mx-auto italic shadow-sm">{{ index + 1 }}</span>
+                  </td>
+                  <td class="px-8 py-8">
+                    <div class="flex flex-col">
+                        <span class="text-3xl font-[1000] text-slate-900 italic tracking-tighter leading-none">T-{{ order.tableNumber }}</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 px-2 py-0.5 bg-slate-100 w-fit rounded-md">{{ order.zone }}</span>
+                    </div>
+                  </td>
+                  <td class="px-12 py-8">
+                    <div class="flex flex-wrap gap-3">
+                        <span v-for="i in order.items" :key="i.id" class="px-4 py-2 bg-white border border-slate-200 rounded-2xl text-xs font-black text-slate-700 flex items-center shadow-sm hover:border-indigo-200 transition-colors">
+                            <span class="text-indigo-600 font-[1000] text-sm mr-2.5">{{ i.quantity }}x</span> {{ i.menu.name }}
+                        </span>
+                    </div>
+                  </td>
+                  <td class="px-12 py-8 text-center font-mono text-xs font-black text-slate-800 italic bg-slate-50/30">
+                    {{ new Date(order.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) }}
+                  </td>
+                  <td class="px-12 py-8 text-right">
+                    <div class="inline-flex items-center px-5 py-2 bg-emerald-50 text-emerald-600 rounded-2xl text-[11px] font-[1000] uppercase tracking-widest border border-emerald-100 shadow-sm">
+                        <CheckCircle2 class="w-4 h-4 mr-2.5" />
+                        {{ getElapsedTime(order.createdAt) }} นาที
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.02);
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+
+.list-enter-active, .list-leave-active { transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.list-enter-from { opacity: 0; transform: scale(0.9) translateY(40px); }
+.list-leave-to { opacity: 0; transform: scale(0.9) translateX(40px); }
+.list-move { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); box-shadow: 0 25px 50px -12px rgba(244, 63, 94, 0.25); }
+  50% { transform: scale(1.01); box-shadow: 0 35px 60px -12px rgba(244, 63, 94, 0.4); }
 }
 
-/* Add subtle shadow to cards for depth */
-.grid > div {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
 }
 </style>
+
+
