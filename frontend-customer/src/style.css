@@ -21,11 +21,11 @@ body {
 }
 
 .card {
-  @apply bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0, 0, 0, 0.05)] border border-slate-100 overflow-hidden transition-all duration-500;
+  @apply bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden transition-all duration-500;
 }
 
 .card:hover {
-  @apply shadow-[0_30px_70px_rgba(0, 0, 0, 0.08)] -translate-y-2;
+  @apply shadow-2xl -translate-y-2;
 }
 
 .glass {
