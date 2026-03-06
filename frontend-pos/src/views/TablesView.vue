@@ -207,9 +207,17 @@ const confirmMergeTable = async () => {
                   <span class="text-2xl font-black transition-colors" :class="activeTable?.id === table.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'">{{ table.number }}</span>
                   <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border', getStatusColor(table.status)]">{{ getStatusLabel(table.status) }}</span>
                 </div>
-                <div class="flex items-center space-x-1 mb-2 text-slate-400" v-if="table.seats">
-                    <Users class="w-3 h-3" />
-                    <span class="text-[10px] font-bold">{{ table.seats }} Seats</span>
+                <div class="flex items-center space-x-1.5 mb-2">
+                    <div class="px-2 py-0.5 rounded-md text-[10px] font-black flex items-center space-x-1 transition-colors"
+                        :class="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'">
+                        <Users class="w-3 h-3" :class="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL' ? 'text-indigo-200' : 'text-slate-400'" />
+                        <span v-if="table.pax">
+                            {{ table.pax }} <span class="opacity-40 font-medium">/</span> {{ table.seats }}
+                        </span>
+                        <span v-else>
+                            {{ table.seats }} {{ t("posModule.seats") }}
+                        </span>
+                    </div>
                 </div>
                 <div v-if="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL'" class="space-y-2">
                   <p class="text-xs font-medium text-slate-400">{{ t("posModule.elapsedTime") }}</p>

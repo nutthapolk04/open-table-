@@ -15,10 +15,10 @@ const route = useRoute();
 const isCollapsed = ref(false);
 
 const navItems = [
-  { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { name: 'Zones & Tables', path: '/floor-plan', icon: Map },
-  { name: 'Menu & Buffet', path: '/menu', icon: ChefHat },
-  { name: 'Settings', path: '/settings', icon: Settings },
+  { name: 'แดชบอร์ด', path: '/', icon: LayoutDashboard },
+  { name: 'โซนและโต๊ะ', path: '/floor-plan', icon: Map },
+  { name: 'เมนูและบุฟเฟ่ต์', path: '/menu', icon: ChefHat },
+  { name: 'ตั้งค่า', path: '/settings', icon: Settings },
 ];
 
 </script>
@@ -62,8 +62,8 @@ const navItems = [
             <User class="w-5 h-5" />
           </div>
           <div v-if="!isCollapsed" class="ml-3 overflow-hidden">
-            <p class="text-sm font-black text-slate-800 truncate">Manager</p>
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Administrator</p>
+            <p class="text-sm font-black text-slate-800 truncate">ผู้จัดการ</p>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ผู้ดูแลระบบ</p>
           </div>
           <ChevronRight v-if="!isCollapsed" class="ml-auto w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
         </div>
@@ -84,7 +84,7 @@ const navItems = [
             <div class="h-6 w-px bg-slate-200 mx-2"></div>
             <button class="bg-indigo-50 text-indigo-600 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center shadow-sm">
                 <LogOut class="w-4 h-4 mr-2" />
-                Sign Out
+                ออกจากระบบ
             </button>
         </div>
       </header>

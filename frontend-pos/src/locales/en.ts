@@ -12,6 +12,7 @@ export default {
     tapToView: "Tap on any table to view details or start a new session",
     table: "Table",
     zone: "Zone",
+    seats: "Seats",
     items: "Items",
     menuItem: "Menu Item",
     qty: "Qty",

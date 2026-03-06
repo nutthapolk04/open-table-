@@ -2,7 +2,15 @@ exports.getZones = async (req, res) => {
     const prisma = req.app.get('prisma');
     try {
         const zones = await prisma.zone.findMany({
-            include: { tables: true }
+            include: {
+                tables: {
+                    include: {
+                        sessions: {
+                            where: { status: 'ACTIVE' }
+                        }
+                    }
+                }
+            }
         });
         res.json(zones);
     } catch (error) {

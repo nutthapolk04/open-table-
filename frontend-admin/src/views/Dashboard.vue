@@ -13,10 +13,10 @@ import {
 } from 'lucide-vue-next';
 
 const stats = [
-  { label: 'Daily Revenue', value: '฿124,500', trend: '+12.5%', icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-  { label: 'Total Guests', value: '342', trend: '+8.2%', icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-  { label: 'Avg. Session', value: '84 min', trend: '-2.1%', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50' },
-  { label: 'Occupancy', value: '78%', trend: '+5.0%', icon: Activity, color: 'text-rose-500', bg: 'bg-rose-50' },
+  { label: 'รายได้ประจำวัน', value: '฿124,500', trend: '+12.5%', icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  { label: 'ลูกค้าทั้งหมด', value: '342', trend: '+8.2%', icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+  { label: 'เวลาเฉลี่ย', value: '84 นาที', trend: '-2.1%', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50' },
+  { label: 'อัตราการใช้โต๊ะ', value: '78%', trend: '+5.0%', icon: Activity, color: 'text-rose-500', bg: 'bg-rose-50' },
 ];
 
 </script>
@@ -60,15 +60,15 @@ const stats = [
                          <Star class="w-5 h-5 fill-current" />
                      </div>
                      <div>
-                        <h4 class="text-2xl font-black text-white uppercase italic tracking-tighter">Peak Analytics</h4>
-                        <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Real-time Traffic Monitor</p>
+                        <h4 class="text-2xl font-black text-white uppercase italic tracking-tighter">วิเคราะห์ช่วงพีค</h4>
+                        <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">ติดตามปริมาณลูกค้าแบบเรียลไทม์</p>
                      </div>
                  </div>
                  
                  <div class="h-64 flex items-end space-x-4 py-6 border-b border-slate-800">
                       <div v-for="i in 12" :key="i" class="flex-1 bg-indigo-600/20 rounded-t-xl group relative cursor-pointer hover:bg-indigo-600 transition-all" :style="{ height: (20 + Math.random() * 80) + '%' }">
                            <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-slate-900 text-[10px] px-2 py-1 rounded-md font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap lg:block hidden">
-                                42 Guest Units
+                                42 ลูกค้า
                            </div>
                       </div>
                  </div>
@@ -82,14 +82,14 @@ const stats = [
         </div>
 
         <div class="card p-10 bg-white border-slate-200">
-             <h4 class="text-xl font-black text-slate-800 uppercase italic tracking-tighter mb-8 bg-indigo-50 p-4 rounded-2xl text-center border-l-4 border-indigo-600">Premium Trends</h4>
+             <h4 class="text-xl font-black text-slate-800 uppercase italic tracking-tighter mb-8 bg-indigo-50 p-4 rounded-2xl text-center border-l-4 border-indigo-600">เมนูยอดนิยม</h4>
              <div class="space-y-6">
                  <div v-for="m in ['Wagyu A5', 'Pork Belly XL', 'Truffle Soup', 'Salmon Sashimi']" :key="m" class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all">
                       <div class="flex items-center">
                           <div class="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center text-lg mr-4">🍽️</div>
                           <div>
                               <p class="text-sm font-black text-slate-800 uppercase">{{ m }}</p>
-                              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Popular Today</p>
+                               <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ยอดนิยมวันนี้</p>
                           </div>
                       </div>
                       <ChevronRight class="w-4 h-4 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
@@ -97,7 +97,7 @@ const stats = [
              </div>
              
              <button class="w-full mt-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all active:scale-95">
-                 View Full Report
+                 ดูรายงานทั้งหมด
              </button>
         </div>
     </div>

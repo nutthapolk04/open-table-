@@ -17,6 +17,7 @@ export interface Table {
   zone: string;
   time?: string;
   pax?: number;
+  seats?: number;
   orders: OrderItem[];
   rawOrders?: any[];
   timeSeated?: string;
@@ -113,6 +114,7 @@ export const usePosStore = defineStore("pos", {
             number: t.number,
             status: t.status,
             zone: t.zone?.name || "No Zone",
+            seats: t.seats || 4,
             pax: activeSession?.customerCount,
             sessionId: activeSession?.id,
             tierId: activeSession?.tierId,
