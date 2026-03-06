@@ -154,7 +154,7 @@ export const usePosStore = defineStore("pos", {
     initSocket() {
       if (this.socket) return;
 
-      const socketUrl = "http://localhost:3000"; // Should use env
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       this.socket = io(socketUrl);
 
       this.socket.on("table-moved", () => this.fetchInitialData());
