@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X } from "lucide-vue-next";
+import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X, Users } from "lucide-vue-next";
 import QrcodeVue from "qrcode.vue";
 import { usePosStore } from "../stores/pos";
 import CheckoutModal from "../components/CheckoutModal.vue";
@@ -206,6 +206,10 @@ const confirmMergeTable = async () => {
                 <div class="flex justify-between items-start mb-4">
                   <span class="text-2xl font-black transition-colors" :class="activeTable?.id === table.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'">{{ table.number }}</span>
                   <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border', getStatusColor(table.status)]">{{ getStatusLabel(table.status) }}</span>
+                </div>
+                <div class="flex items-center space-x-1 mb-2 text-slate-400" v-if="table.seats">
+                    <Users class="w-3 h-3" />
+                    <span class="text-[10px] font-bold">{{ table.seats }} Seats</span>
                 </div>
                 <div v-if="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL'" class="space-y-2">
                   <p class="text-xs font-medium text-slate-400">{{ t("posModule.elapsedTime") }}</p>

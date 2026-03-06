@@ -25,10 +25,10 @@ exports.createZone = async (req, res) => {
 
 exports.createTable = async (req, res) => {
     const prisma = req.app.get('prisma');
-    const { number, zoneId } = req.body;
+    const { number, zoneId, seats } = req.body;
     try {
         const table = await prisma.table.create({
-            data: { number, zoneId }
+            data: { number, zoneId, seats: seats ? parseInt(seats) : 4 }
         });
         res.json(table);
     } catch (error) {

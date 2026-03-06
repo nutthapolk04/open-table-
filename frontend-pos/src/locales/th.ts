@@ -72,4 +72,30 @@ export default {
       CLEANING: "รอทำความสะอาด"
     }
   },
+  kitchenModule: {
+    title: "หน้าจอห้องครัว",
+    subtitle: "ระบบแสดงออเดอร์เรียลไทม์",
+    activeOrders: "ออเดอร์กำลังทำ",
+    history: "ประวัติออเดอร์",
+    serverTime: "เวลาปัจจุบัน",
+    tablePrefix: "โต๊ะ",
+    status: {
+      pending: "ออเดอร์ใหม่",
+      cooking: "กำลังทำ",
+      served: "เสิร์ฟแล้ว",
+      startCook: "เริ่มทำ",
+      doneServe: "เสร็จ / เสิร์ฟ",
+      completed: "เสร็จสิ้น"
+    },
+    emptyTitle: "ไม่มีออเดอร์",
+    emptySubtitle: "ขณะนี้ยังไม่มีรายการอาหารส่งเข้าครัว",
+    tableHeaders: {
+      status: "สถานะ",
+      table: "โต๊ะ",
+      items: "รายการอาหาร",
+      timeCreated: "เวลาสั่ง",
+      elapsed: "เวลาที่ผ่านไป"
+    },
+    elapsedAgo: "นาทีที่แล้ว"
+  }
 };

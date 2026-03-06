@@ -17,10 +17,19 @@ export default {
         all: 'All',
         invalidSession: 'Invalid Session',
         pleaseScanQR: 'Please scan the QR Code on your table.',
-        reviewOrder: 'Review Order',
+        reviewOrder: 'Order Food',
         totalItems: 'total items',
         sendOrderToKitchen: 'Send Order to Kitchen',
         outOfStock: 'OUT OF STOCK',
-        soldOut: 'Sold Out'
+        soldOut: 'Sold Out',
+        searchOurSelection: 'Search our selection...',
+        allSelection: 'All Selection',
+        yourSelection: 'Your Selection',
+        signature: 'Signature',
+        status: 'Status',
+        available: 'Available',
+        meats: 'Meats',
+        vegetables: 'Vegetables',
+        drinks: 'Drinks'
     }
 }

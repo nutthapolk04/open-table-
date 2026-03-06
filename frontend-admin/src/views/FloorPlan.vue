@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Monitor,
   Zap,
-  Info
+  Info,
+  Users
 } from 'lucide-vue-next';
 import api from '../api';
 
@@ -20,7 +21,7 @@ const showAddZone = ref(false);
 const showAddTable = ref(false);
 
 const newZone = ref({ name: '' });
-const newTable = ref({ number: '', zoneId: '' });
+const newTable = ref({ number: '', zoneId: '', seats: 4 });
 
 const fetchData = async () => {
     loading.value = true;
@@ -47,6 +48,7 @@ const createTable = async () => {
     await api.post('/tables', newTable.value);
     showAddTable.value = false;
     newTable.value.number = '';
+    newTable.value.seats = 4;
     fetchData();
 };
 
@@ -114,8 +116,12 @@ onMounted(fetchData);
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 relative z-10">
                 <div v-for="table in zone.tables" :key="table.id" class="relative group/table">
                     <div class="aspect-square bg-slate-50 border border-slate-200/40 rounded-[32px] flex flex-col items-center justify-center p-4 transition-all duration-300 group-hover/table:bg-indigo-600 group-hover/table:border-indigo-600 group-hover/table:shadow-xl group-hover/table:shadow-indigo-200 group-hover/table:-translate-y-2">
-                        <TableIcon class="w-6 h-6 text-slate-400 mb-3 group-hover/table:text-indigo-100 transition-colors" />
+                        <TableIcon class="w-6 h-6 text-slate-400 mb-2 group-hover/table:text-indigo-100 transition-colors" />
                         <span class="text-xl font-black text-slate-800 group-hover/table:text-white transition-colors tracking-tighter italic uppercase">{{ table.number }}</span>
+                        <div class="flex items-center space-x-1 mt-2 text-slate-400 group-hover/table:text-indigo-200">
+                            <Users class="w-3 h-3" />
+                            <span class="text-[10px] font-bold">{{ table.seats }}</span>
+                        </div>
                     </div>
                     <!-- Tooltip Style Status -->
                     <div class="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 border-2 border-white rounded-full shadow-lg group-hover/table:scale-125 transition-transform z-10 flex items-center justify-center">
@@ -181,6 +187,10 @@ onMounted(fetchData);
                             <option value="">Select Target Floor...</option>
                             <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
                         </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Seating Capacity</label>
+                        <input v-model.number="newTable.seats" type="number" min="1" class="input-field text-xl font-bold h-16" placeholder="e.g. 4" />
                     </div>
                 </div>
                 <div class="mt-12 flex space-x-4">

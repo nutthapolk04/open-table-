@@ -72,4 +72,30 @@ export default {
       CLEANING: "Cleaning"
     }
   },
+  kitchenModule: {
+    title: "Kitchen Display",
+    subtitle: "Real-time Monitoring",
+    activeOrders: "Active Orders",
+    history: "History",
+    serverTime: "Server Time",
+    tablePrefix: "Table",
+    status: {
+      pending: "NEW",
+      cooking: "COOKING",
+      served: "SERVED",
+      startCook: "START COOK",
+      doneServe: "DONE / SERVE",
+      completed: "COMPLETED"
+    },
+    emptyTitle: "No active orders",
+    emptySubtitle: "The kitchen is currently quiet.",
+    tableHeaders: {
+      status: "Status",
+      table: "Table",
+      items: "Items",
+      timeCreated: "Time Created",
+      elapsed: "Elapsed"
+    },
+    elapsedAgo: "m ago"
+  }
 };

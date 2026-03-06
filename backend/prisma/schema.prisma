@@ -21,6 +21,7 @@ model Zone {
 model Table {
   id        String    @id @default(uuid())
   number    String
+  seats     Int       @default(4)
   zoneId    String
   zone      Zone      @relation(fields: [zoneId], references: [id])
   status    String    @default("FREE") // FREE, OCCUPIED, CHECKING_BILL, CLEANING
@@ -51,10 +52,13 @@ model Category {
 
 model Menu {
   id           String      @id @default(uuid())
-  name         String
-  price        Float?      // Only for A La Carte
-  description  String?
-  categoryId   String
+  name          String
+  nameTh        String?
+  price         Float?      // Only for A La Carte
+  description   String?
+  descriptionTh String?
+  image         String?
+  categoryId    String
   category     Category    @relation(fields: [categoryId], references: [id])
   buffetTiers  BuffetTier[]
   orderItems   OrderItem[]

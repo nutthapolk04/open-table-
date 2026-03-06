@@ -17,10 +17,19 @@ export default {
         all: 'ทั้งหมด',
         invalidSession: 'เซสชั่นไม่พบคหรือไม่ถูกต้อง',
         pleaseScanQR: 'กรุณาสแกน QR Code ที่โต๊ะอีกครั้ง',
-        reviewOrder: 'ทบทวนรายการสั่งอาหาร',
+        reviewOrder: 'สั่งอาหาร',
         totalItems: 'รายการทั้งหมด',
         sendOrderToKitchen: 'ส่งรายการไปยังห้องครัว',
         outOfStock: 'สินค้าหมด',
-        soldOut: 'หมด'
+        soldOut: 'หมด',
+        searchOurSelection: 'ค้นหารายการอาหาร...',
+        allSelection: 'รายการทั้งหมด',
+        yourSelection: 'รายการที่คุณเลือก',
+        signature: 'เมนูแนะนำ',
+        status: 'สถานะ',
+        available: 'พร้อมเสิร์ฟ',
+        meats: 'เนื้อสัตว์',
+        vegetables: 'ผักสด',
+        drinks: 'เครื่องดื่ม'
     }
 }
