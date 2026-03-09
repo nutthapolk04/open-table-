@@ -9,6 +9,10 @@ router.get('/zones', zoneController.getZones);
 router.post('/zones', zoneController.createZone);
 router.get('/tables', zoneController.getTables);
 router.post('/tables', zoneController.createTable);
+router.delete('/zones/:id', zoneController.deleteZone);
+router.delete('/tables/:id', zoneController.deleteTable);
+router.patch('/tables/:id', zoneController.updateTable);
+router.patch('/zones/:id', zoneController.updateZone);
 
 // Menu & Category & Tier Routes
 router.get('/categories', menuController.getCategories);

@@ -65,3 +65,85 @@ exports.getTables = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+exports.updateTable = async (req, res) => {
+    const prisma = req.app.get('prisma');
+    const { id } = req.params;
+    const { number, seats } = req.body;
+    try {
+        const table = await prisma.table.update({
+            where: { id },
+            data: {
+                number,
+                seats: seats ? parseInt(seats) : undefined
+            }
+        });
+        res.json(table);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.deleteTable = async (req, res) => {
+    const prisma = req.app.get('prisma');
+    const { id } = req.params;
+    try {
+        const table = await prisma.table.findUnique({ where: { id } });
+        if (!table) return res.status(404).json({ error: 'Table not found' });
+
+        if (table.status !== 'FREE') {
+            return res.status(400).json({ error: 'Cannot delete table while it is occupied or being cleaned.' });
+        }
+
+        await prisma.table.delete({ where: { id } });
+        res.json({ message: 'Table deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.deleteZone = async (req, res) => {
+    const prisma = req.app.get('prisma');
+    const { id } = req.params;
+    const { force } = req.query;
+
+    try {
+        const zone = await prisma.zone.findUnique({
+            where: { id },
+            include: { tables: true }
+        });
+
+        if (!zone) return res.status(404).json({ error: 'Zone not found' });
+
+        if (zone.tables.length > 0 && force !== 'true') {
+            return res.status(400).json({
+                error: 'Zone has tables. Use force=true to delete all tables and the zone.',
+                hasTables: true
+            });
+        }
+
+        if (force === 'true') {
+            // Delete all tables in zone first
+            await prisma.table.deleteMany({ where: { zoneId: id } });
+        }
+
+        await prisma.zone.delete({ where: { id } });
+        res.json({ message: 'Zone deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.updateZone = async (req, res) => {
+    const prisma = req.app.get('prisma');
+    const { id } = req.params;
+    const { name } = req.body;
+    try {
+        const zone = await prisma.zone.update({
+            where: { id },
+            data: { name }
+        });
+        res.json(zone);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

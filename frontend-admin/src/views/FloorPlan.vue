@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { 
   Plus, 
   Trash2, 
+  Pencil,
   MapPin, 
   Table as TableIcon, 
   Layers,
@@ -13,7 +14,10 @@ import {
   Info,
   Users,
   QrCode,
-  ExternalLink
+  ExternalLink,
+  Check,
+  Receipt,
+  Sparkles
 } from 'lucide-vue-next';
 import api from '../api';
 
@@ -21,11 +25,20 @@ const zones = ref<any[]>([]);
 const loading = ref(false);
 const showAddZone = ref(false);
 const showAddTable = ref(false);
+const showEditTable = ref(false);
 
 const newZone = ref({ name: '' });
 const newTable = ref({ number: '', zoneId: '', seats: 4 });
 const showQRModal = ref(false);
 const selectedTableForQR = ref<any>(null);
+
+const editingTable = ref<any>(null);
+const editingZone = ref<any>(null);
+const showEditZone = ref(false);
+
+const zoneToDelete = ref<any>(null);
+const showDeleteZoneConfirm = ref(false);
+const deleteError = ref('');
 
 const frontendCustomerUrl = "http://localhost:5174";
 
@@ -59,7 +72,7 @@ const createTable = async () => {
         showAddTable.value = false;
         newTable.value.number = '';
         newTable.value.seats = 4;
-        newTable.value.zoneId = ''; // Reset zoneId too
+        newTable.value.zoneId = '';
         await fetchData();
     } catch (e: any) {
         console.error(e);
@@ -72,6 +85,98 @@ const openQRModal = (table: any) => {
     showQRModal.value = true;
 };
 
+const translateError = (msg: string) => {
+    if (!msg) return '';
+    if (msg.includes('occupied or being cleaned')) return 'ไม่สามารถลบได้เนื่องจากมีคนนั่งอยู่หรือกำลังทำความสะอาด';
+    if (msg.includes('Zone has tables')) return 'โซนนี้ยังมีโต๊ะอยู่';
+    if (msg.includes('Table not found')) return 'ไม่พบข้อมูลโต๊ะ';
+    if (msg.includes('Zone not found')) return 'ไม่พบข้อมูลโซน';
+    return msg;
+};
+
+const deleteTable = async (id: string) => {
+    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบโต๊ะนี้?')) return;
+    try {
+        await api.delete(`/tables/${id}`);
+        fetchData();
+    } catch (e: any) {
+        alert(translateError(e.response?.data?.error) || 'เกิดข้อผิดพลาดในการลบโต๊ะ');
+    }
+};
+
+const handleEditTableClick = (table: any) => {
+    editingTable.value = { ...table };
+    showEditTable.value = true;
+};
+
+const updateTable = async () => {
+    if (!editingTable.value || !editingTable.value.number) return;
+    try {
+        await api.patch(`/tables/${editingTable.value.id}`, {
+            number: editingTable.value.number,
+            seats: editingTable.value.seats
+        });
+        showEditTable.value = false;
+        editingTable.value = null;
+        fetchData();
+    } catch (e: any) {
+        alert(translateError(e.response?.data?.error) || 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลโต๊ะ');
+    }
+};
+
+const handleDeleteZoneClick = (zone: any) => {
+    zoneToDelete.value = zone;
+    showDeleteZoneConfirm.value = true;
+    deleteError.value = '';
+};
+
+const handleEditZoneClick = (zone: any) => {
+    editingZone.value = { ...zone };
+    showEditZone.value = true;
+};
+
+const updateZone = async () => {
+    if (!editingZone.value || !editingZone.value.name) return;
+    try {
+        await api.patch(`/zones/${editingZone.value.id}`, {
+            name: editingZone.value.name
+        });
+        showEditZone.value = false;
+        editingZone.value = null;
+        fetchData();
+    } catch (e: any) {
+        alert(translateError(e.response?.data?.error) || 'เกิดข้อผิดพลาดในการแก้ไขชื่อโซน');
+    }
+};
+
+const confirmDeleteZone = async (force: boolean = false) => {
+    if (!zoneToDelete.value) return;
+    try {
+        await api.delete(`/zones/${zoneToDelete.value.id}${force ? '?force=true' : ''}`);
+        showDeleteZoneConfirm.value = false;
+        zoneToDelete.value = null;
+        fetchData();
+    } catch (e: any) {
+        if (e.response?.data?.hasTables) {
+            deleteError.value = 'โซนนี้ยังมีโต๊ะอยู่ คุณแน่ใจหรือไม่ว่าต้องการลบโต๊ะทั้งหมดและประวัติในโซนนี้?';
+        } else {
+            alert(translateError(e.response?.data?.error) || 'เกิดข้อผิดพลาดในการลบโซน');
+        }
+    }
+};
+
+const getTableStatusUI = (status: string) => {
+    switch (status) {
+        case 'OCCUPIED':
+            return { color: 'bg-indigo-500', icon: Users, label: 'มีคนนั่ง' };
+        case 'CHECKING_BILL':
+            return { color: 'bg-amber-500', icon: Receipt, label: 'รอเช็คบิล' };
+        case 'CLEANING':
+            return { color: 'bg-rose-500', icon: Sparkles, label: 'ทำความสะอาด' };
+        default:
+            return { color: 'bg-emerald-500', icon: Check, label: 'ว่าง' };
+    }
+};
 
 onMounted(fetchData);
 
@@ -86,8 +191,8 @@ onMounted(fetchData);
           <MapPin class="w-6 h-6 text-indigo-600" />
         </div>
         <div>
-          <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">ผังร้านอาหาร</h2>
-          <p class="text-slate-500 font-bold text-sm tracking-wide mt-1 italic">จัดการโซนและผังโต๊ะภายในร้าน</p>
+          <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">ผังโต๊ะ</h2>
+          <p class="text-slate-500 font-bold text-sm tracking-wide mt-1 italic">จัดการโซนและตำแหน่งที่ตั้งของแต่ละโต๊ะ</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
@@ -100,6 +205,16 @@ onMounted(fetchData);
             <span>เพิ่มโต๊ะใหม่</span>
         </button>
       </div>
+    </div>
+
+    <!-- Status Legend -->
+    <div class="flex items-center space-x-8 px-6 py-4 bg-slate-50 rounded-3xl border border-slate-100 w-fit">
+        <div v-for="s in ['FREE', 'OCCUPIED']" :key="s" class="flex items-center space-x-3">
+            <div :class="['w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-sm', getTableStatusUI(s).color]">
+                <component :is="getTableStatusUI(s).icon" class="w-4 h-4" />
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">{{ getTableStatusUI(s).label }}</span>
+        </div>
     </div>
 
     <div v-if="loading" class="flex flex-col items-center justify-center py-24 space-y-4 opacity-50">
@@ -120,18 +235,20 @@ onMounted(fetchData);
                         <MapPin class="w-6 h-6 text-emerald-400" />
                     </div>
                     <div>
-                        <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">{{ zone.name }}</h3>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mt-1 block px-2 py-0.5 bg-indigo-50 rounded-full w-fit">โซนรับประทานอาหาร</span>
+                        <div class="flex items-center space-x-2">
+                           <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">{{ zone.name }}</h3>
+                           <button @click="handleEditZoneClick(zone)" class="p-1 text-slate-300 hover:text-indigo-600 transition-colors">
+                               <Pencil class="w-4 h-4" />
+                           </button>
+                        </div>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mt-1 block px-2 py-0.5 bg-indigo-50 rounded-full w-fit">โซนที่เปิดให้บริการปกติ</span>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <div class="h-10 px-4 bg-slate-100 rounded-xl flex items-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    <div class="h-10 px-4 bg-slate-100 rounded-xl flex items-center text-xs font-bold text-slate-500">
                         {{ zone.tables?.length || 0 }} โต๊ะ
                     </div>
-                    <div class="h-10 px-4 bg-indigo-50 rounded-xl flex items-center text-[10px] font-black uppercase tracking-wider text-indigo-600">
-                        {{ zone.tables?.reduce((sum: number, t: any) => sum + (t.seats || 4), 0) }} ที่นั่งรวม
-                    </div>
-                    <button class="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all">
+                    <button @click="handleDeleteZoneClick(zone)" class="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all">
                         <Trash2 class="w-5 h-5" />
                     </button>
                 </div>
@@ -146,7 +263,6 @@ onMounted(fetchData);
                         <span class="text-xl font-black text-slate-800 group-hover/table:text-white transition-colors tracking-tighter italic uppercase"
                             :class="table.sessions?.length > 0 ? 'text-indigo-900' : ''">{{ table.number }}</span>
                         
-                        <!-- Occupancy: show pax/seats if occupied, just seats if free -->
                         <div class="flex items-center space-x-1 mt-2 group-hover/table:text-indigo-200 transition-colors"
                             :class="table.sessions?.length > 0 ? 'text-indigo-500' : 'text-slate-400'">
                             <Users class="w-3 h-3" />
@@ -156,7 +272,7 @@ onMounted(fetchData);
                             <span v-else class="text-[10px] font-bold">{{ table.seats || 4 }}</span>
                         </div>
 
-                        <!-- QR Code Button (Only if occupied) -->
+                        <!-- QR Code Button -->
                         <button 
                             v-if="table.sessions?.length > 0"
                             @click.stop="openQRModal(table)"
@@ -165,13 +281,30 @@ onMounted(fetchData);
                             <QrCode class="w-4 h-4" />
                         </button>
                     </div>
-                    <!-- Status dot -->
-                    <div v-if="table.sessions?.length > 0" class="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 border-2 border-white rounded-full shadow-lg group-hover/table:scale-125 transition-transform z-10 flex items-center justify-center">
-                        <Zap class="w-2 h-2 text-white fill-current" />
+
+                    <!-- Dynamic Status Indicator -->
+                    <div v-if="['FREE', 'OCCUPIED'].includes(table.status)" :class="['absolute -top-2 -right-2 w-8 h-8 border-4 border-white rounded-[14px] shadow-lg group-hover/table:scale-125 transition-all z-10 flex items-center justify-center text-white', getTableStatusUI(table.status).color]">
+                        <component :is="getTableStatusUI(table.status).icon" class="w-3 h-3 fill-current" />
+                    </div>
+                    
+                    <!-- Edit/Delete Table Buttons -->
+                    <div class="absolute -bottom-2 -right-2 flex space-x-1 z-10 opacity-0 group-hover/table:opacity-100 transition-all">
+                        <button 
+                            @click="handleEditTableClick(table)"
+                            class="w-8 h-8 bg-white border border-slate-200 rounded-full shadow-md flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                        >
+                            <Pencil class="w-3 h-3" />
+                        </button>
+                        <button 
+                            @click="deleteTable(table.id)"
+                            class="w-8 h-8 bg-white border border-slate-200 rounded-full shadow-md flex items-center justify-center text-slate-700 hover:text-red-500 hover:border-red-100 transition-all"
+                        >
+                            <Trash2 class="w-3 h-3" />
+                        </button>
                     </div>
                 </div>
 
-                <!-- Ghost Add Table Inside Zone -->
+                <!-- Ghost Add Table -->
                 <button @click="showAddTable = true; newTable.zoneId = zone.id" class="aspect-square border-4 border-dashed border-slate-100/50 rounded-[32px] flex flex-col items-center justify-center p-4 hover:border-indigo-200 hover:bg-white transition-all group/ghost shadow-inner">
                     <Plus class="w-8 h-8 text-slate-300 group-hover/ghost:text-indigo-400 group-hover/ghost:rotate-90 transition-all" />
                     <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2 opacity-0 group-hover/ghost:opacity-100 transition-opacity">เพิ่มโต๊ะ</span>
@@ -182,13 +315,14 @@ onMounted(fetchData);
         <!-- Empty State -->
         <div v-if="zones.length === 0" class="card border-dashed border-2 py-32 flex flex-col items-center justify-center text-slate-400">
              <Layers class="w-20 h-20 opacity-5 mb-6" />
-             <p class="font-black uppercase tracking-widest text-sm italic opacity-40">ยังไม่มีโซนรับประทานอาหาร</p>
-             <button @click="showAddZone = true" class="mt-8 btn-primary">เริ่มต้นตั้งค่าระบบ</button>
+             <p class="font-black uppercase tracking-widest text-sm italic opacity-40">ยังไม่มีการตั้งค่าโซนที่นั่ง</p>
+             <button @click="showAddZone = true" class="mt-8 btn-primary">เริ่มต้นตั้งค่าระบบหุ่นยนต์และโต๊ะ</button>
         </div>
     </div>
 
-    <!-- Modals (Simple Overlay) -->
+    <!-- Modals -->
     <Teleport to="body">
+        <!-- Add Zone Modal -->
         <div v-if="showAddZone" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-500" @click="showAddZone = false"></div>
             <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500 p-12">
@@ -196,19 +330,20 @@ onMounted(fetchData);
                     <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
                         <Layers class="w-6 h-6" />
                     </div>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">สร้างโซนใหม่</h3>
+                    <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">กำหนดโซนใหม่</h3>
                 </div>
                 <div class="space-y-4">
-                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400">ชื่อโซน</label>
-                    <input v-model="newZone.name" class="input-field text-xl font-bold h-16" placeholder="เช่น VIP LOUNGE" />
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400">หมายเลข / ชื่อโซน</label>
+                    <input v-model="newZone.name" class="input-field text-xl font-bold h-16" placeholder="เช่น โซนวีไอพี" />
                 </div>
                 <div class="mt-12 flex space-x-4">
                     <button @click="showAddZone = false" class="btn-secondary flex-1">ยกเลิก</button>
-                    <button @click="createZone" class="btn-primary flex-1">บันทึกโซน</button>
+                    <button @click="createZone" class="btn-primary flex-1">ยืนยันโซน</button>
                 </div>
             </div>
         </div>
 
+        <!-- Add Table Modal -->
         <div v-if="showAddTable" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-500" @click="showAddTable = false"></div>
             <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500 p-12">
@@ -216,28 +351,28 @@ onMounted(fetchData);
                     <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
                         <TableIcon class="w-6 h-6" />
                     </div>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">เพิ่มโต๊ะใหม่</h3>
+                    <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">เพิ่มหมายเลขโต๊ะ</h3>
                 </div>
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">หมายเลขโต๊ะ</label>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">ระบุชื่อ / หมายเลขโต๊ะ</label>
                         <input v-model="newTable.number" class="input-field text-xl font-bold h-16" placeholder="เช่น A-42" />
                     </div>
                     <div>
                         <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">โซนที่ตั้ง</label>
                         <select v-model="newTable.zoneId" class="input-field text-lg font-bold h-16 appearance-none">
-                            <option value="">เลือกโซน...</option>
+                            <option value="">เลือกโซนที่ต้องการ...</option>
                             <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">จำนวนที่นั่ง</label>
-                        <input v-model.number="newTable.seats" type="number" min="1" class="input-field text-xl font-bold h-16" placeholder="e.g. 4" />
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">จำนวนผู้มานั่ง</label>
+                        <input v-model.number="newTable.seats" type="number" min="1" class="input-field text-xl font-bold h-16" placeholder="เช่น 4" />
                     </div>
                 </div>
                 <div class="mt-12 flex space-x-4">
                     <button @click="showAddTable = false" class="btn-secondary flex-1">ยกเลิก</button>
-                    <button @click="createTable" class="btn-primary flex-1">บันทึกโต๊ะ</button>
+                    <button @click="createTable" class="btn-primary flex-1">ยืนยันโต๊ะ</button>
                 </div>
             </div>
         </div>
@@ -272,6 +407,84 @@ onMounted(fetchData);
                     <button @click="showQRModal = false" class="w-full py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">
                         ปิดหน้าต่าง
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Zone Confirmation Modal -->
+        <div v-if="showDeleteZoneConfirm" class="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-300" @click="showDeleteZoneConfirm = false"></div>
+            <div class="bg-white w-full max-w-lg rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 p-10">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-20 h-20 bg-red-50 rounded-[32px] flex items-center justify-center text-red-500 mb-6 shadow-xl shadow-red-100/50">
+                        <Trash2 class="w-8 h-8" />
+                    </div>
+                    
+                    <h3 class="text-2xl font-black text-slate-800 tracking-tighter uppercase italic mb-2">ยืนยันการลบโซน</h3>
+                    <p class="text-slate-500 font-bold text-sm leading-relaxed mb-8">
+                        {{ deleteError || `คุณแน่ใจหรือไม่ว่าต้องการลบโซน "${zoneToDelete?.name}"? ประวัติและข้อมูลทั้งหมดในโซนนี้จะหายไป` }}
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4 w-full">
+                        <button @click="showDeleteZoneConfirm = false" class="btn-secondary h-16 rounded-3xl font-black uppercase tracking-widest text-xs">ยกเลิก</button>
+                        <button 
+                            @click="confirmDeleteZone(!!deleteError)" 
+                            :class="[deleteError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-black']"
+                            class="text-white h-16 rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl transition-all"
+                        >
+                            {{ deleteError ? 'ยืนยันลบทั้งหมด' : 'ใช่, ลบเลย' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Table Modal -->
+        <div v-if="showEditTable" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-500" @click="showEditTable = false"></div>
+            <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500 p-12">
+                <div class="flex items-center space-x-4 mb-10">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                        <Pencil class="w-6 h-6" />
+                    </div>
+                    <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">แก้ไขข้อมูลโต๊ะ</h3>
+                </div>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">ชื่อ/หมายเลขโต๊ะ</label>
+                        <input v-model="editingTable.number" class="input-field text-xl font-bold h-16" placeholder="เช่น A-42" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">จำนวนที่นั่ง</label>
+                        <input v-model.number="editingTable.seats" type="number" min="1" class="input-field text-xl font-bold h-16" placeholder="เช่น 4" />
+                    </div>
+                </div>
+                <div class="mt-12 flex space-x-4">
+                    <button @click="showEditTable = false" class="btn-secondary flex-1">ยกเลิก</button>
+                    <button @click="updateTable" class="btn-primary flex-1">บันทึกข้อมูล</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Zone Modal -->
+        <div v-if="showEditZone" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-500" @click="showEditZone = false"></div>
+            <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500 p-12">
+                <div class="flex items-center space-x-4 mb-10">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                        <Layers class="w-6 h-6" />
+                    </div>
+                    <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">แก้ไขชื่อโซน</h3>
+                </div>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">ชื่อโซน</label>
+                        <input v-model="editingZone.name" class="input-field text-xl font-bold h-16" placeholder="เช่น โซนวีไอพี" />
+                    </div>
+                </div>
+                <div class="mt-12 flex space-x-4">
+                    <button @click="showEditZone = false" class="btn-secondary flex-1">ยกเลิก</button>
+                    <button @click="updateZone" class="btn-primary flex-1">บันทึกข้อมูล</button>
                 </div>
             </div>
         </div>

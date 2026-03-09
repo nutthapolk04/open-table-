@@ -15,10 +15,7 @@ const route = useRoute();
 const isCollapsed = ref(false);
 
 const navItems = [
-  { name: 'แดชบอร์ด', path: '/', icon: LayoutDashboard },
-  { name: 'โซนและโต๊ะ', path: '/floor-plan', icon: Map },
-  { name: 'เมนูและบุฟเฟ่ต์', path: '/menu', icon: ChefHat },
-  { name: 'ตั้งค่า', path: '/settings', icon: Settings },
+  { name: 'ผังโต๊ะ', path: '/', icon: Map },
 ];
 
 </script>
@@ -35,7 +32,7 @@ const navItems = [
         <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
           <span class="text-white font-black text-xl italic">OT</span>
         </div>
-        <span v-if="!isCollapsed" class="ml-4 font-black text-2xl tracking-tighter text-slate-800 uppercase italic">Admin</span>
+        <span v-if="!isCollapsed" class="ml-4 font-black text-2xl tracking-tighter text-slate-800 uppercase italic">ผู้ดูแลระบบ</span>
       </div>
 
       <!-- Navigation -->
@@ -75,7 +72,7 @@ const navItems = [
       <!-- Top Header -->
       <header class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-10 flex items-center justify-between shrink-0 z-20 sticky top-0">
         <div class="flex items-center">
-            <h1 class="text-xl font-black text-slate-800 uppercase tracking-widest italic">{{ route.name?.toString() || 'Management' }}</h1>
+            <h1 class="text-xl font-black text-slate-800 uppercase tracking-widest italic">{{ route.name?.toString() === 'FloorPlan' ? 'ผังโต๊ะ' : 'การจัดการ' }}</h1>
         </div>
         <div class="flex items-center space-x-4">
             <button class="w-10 h-10 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-indigo-600 transition-all">

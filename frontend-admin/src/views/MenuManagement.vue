@@ -68,13 +68,13 @@ onMounted(fetchData);
             <Package class="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">แพ็คเกจบุฟเฟ่ต์</h2>
-            <p class="text-slate-500 font-bold text-sm tracking-wide mt-1 italic">กำหนดราคาและเวลาของแต่ละแพ็คเกจ</p>
+            <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">แพ็กเกจบุฟเฟต์</h2>
+            <p class="text-slate-500 font-bold text-sm tracking-wide mt-1 italic">กำหนดราคาและระยะเวลาในการทานบุฟเฟต์</p>
           </div>
         </div>
         <button @click="showAddTier = true" class="btn-primary h-14 px-8 flex items-center space-x-2 bg-amber-600 shadow-amber-100 hover:bg-amber-700">
             <Plus class="w-5 h-5" />
-            <span>สร้างแพ็คเกจใหม่</span>
+            <span>สร้างแพ็กเกจใหม่</span>
         </button>
       </div>
 
@@ -84,12 +84,12 @@ onMounted(fetchData);
             <h3 class="text-2xl font-black text-slate-800 uppercase italic mb-8">{{ tier.name }}</h3>
             <div class="flex items-end mb-8">
                 <span class="text-5xl font-black text-indigo-600 tracking-tighter italic">฿{{ tier.price }}</span>
-                <span class="text-slate-400 font-bold text-sm ml-2 mb-1">/ คน</span>
+                <span class="text-slate-400 font-bold text-sm ml-2 mb-1">/ ท่าน</span>
             </div>
             <div class="flex items-center space-x-6 text-slate-500 font-bold text-xs uppercase tracking-widest bg-slate-50 p-4 rounded-2xl">
                 <div class="flex items-center">
                     <Clock class="w-4 h-4 mr-2" />
-                    {{ tier.duration || 90 }} นาที
+                    เวลาการทาน {{ tier.duration || 90 }} นาที
                 </div>
             </div>
         </div>
@@ -104,13 +104,13 @@ onMounted(fetchData);
             <Tag class="w-6 h-6 text-indigo-600" />
           </div>
           <div>
-            <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">รายการเมนู</h2>
-            <p class="text-slate-500 font-bold text-sm tracking-wide mt-1 italic">จัดหมวดหมู่เมนูสำหรับลูกค้า</p>
+            <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">คลังรายการอาหาร</h2>
+            <p class="text-slate-500 font-bold text-sm tracking-wide mt-1 italic">จัดการหมวดหมู่และรายการอาหารทั้งหมดในระบบ</p>
           </div>
         </div>
         <button @click="showAddCategory = true" class="btn-secondary h-14 px-8 flex items-center space-x-2">
             <Plus class="w-5 h-5" />
-            <span>เพิ่มหมวดหมู่</span>
+            <span>เพิ่มหมวดหมู่ใหม่</span>
         </button>
       </div>
 
@@ -120,10 +120,10 @@ onMounted(fetchData);
                   <ChefHat class="w-6 h-6 text-indigo-600 group-hover:text-white" />
               </div>
               <h4 class="text-xl font-black text-slate-800 uppercase italic mb-2 tracking-tighter">{{ cat.name }}</h4>
-              <p class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-8">{{ cat.menus?.length || 0 }} รายการ</p>
+              <p class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-8">{{ cat.menus?.length || 0 }} รายการในระบบ</p>
               
               <div class="mt-auto flex items-center text-indigo-600 font-black text-xs uppercase tracking-widest pt-6 border-t border-slate-50">
-                  <span>จัดการเมนู</span>
+                  <span>จัดการรายการอาหาร</span>
                   <ChevronRight class="w-4 h-4 ml-2 group-hover:translate-x-2 transition-transform" />
               </div>
           </div>
@@ -135,11 +135,11 @@ onMounted(fetchData);
         <div v-if="showAddCategory" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl" @click="showAddCategory = false"></div>
             <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative p-12 animate-in zoom-in-95 duration-500">
-                <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic mb-10">เพิ่มหมวดหมู่ใหม่</h3>
-                <input v-model="newCategory.name" class="input-field text-xl font-bold h-16" placeholder="เช่น เนื้อวัวพรีเมียม" />
+                <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic mb-10">สร้างหมวดหมู่ใหม่</h3>
+                <input v-model="newCategory.name" class="input-field text-xl font-bold h-16" placeholder="เช่น เนื้อวัวเกรดพรีเมียม" />
                 <div class="mt-12 flex space-x-4">
                     <button @click="showAddCategory = false" class="btn-secondary flex-1">ยกเลิก</button>
-                    <button @click="createCategory" class="btn-primary flex-1">บันทึกหมวดหมู่</button>
+                    <button @click="createCategory" class="btn-primary flex-1">ยืนยันการเพิ่ม</button>
                 </div>
             </div>
         </div>
@@ -147,11 +147,11 @@ onMounted(fetchData);
         <div v-if="showAddTier" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl" @click="showAddTier = false"></div>
             <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative p-12 animate-in zoom-in-95 duration-500">
-                <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic mb-10">สร้างแพ็คเกจบุฟเฟ่ต์</h3>
+                <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic mb-10">สร้างแพ็กเกจบุฟเฟต์</h3>
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">ชื่อแพ็คเกจ</label>
-                        <input v-model="newTier.name" class="input-field text-xl font-bold h-16" placeholder="เช่น GOLD WAGYU" />
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">ชื่อแพ็กเกจ</label>
+                        <input v-model="newTier.name" class="input-field text-xl font-bold h-16" placeholder="เช่น โกลด์วากิว" />
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -166,7 +166,7 @@ onMounted(fetchData);
                 </div>
                 <div class="mt-12 flex space-x-4">
                     <button @click="showAddTier = false" class="btn-secondary flex-1">ยกเลิก</button>
-                    <button @click="createTier" class="btn-primary flex-1 bg-amber-600 shadow-amber-100 uppercase">บันทึกแพ็คเกจ</button>
+                    <button @click="createTier" class="btn-primary flex-1 bg-amber-600 shadow-amber-100 uppercase">บันทึกข้อมูลแพ็กเกจ</button>
                 </div>
             </div>
         </div>
