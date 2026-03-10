@@ -182,6 +182,11 @@ const handlePrint = () => {
     window.print();
 };
 
+const handlePrintAll = (zone: any) => {
+    // We'll implement a simple print all by opening a new window or just triggering a full-zone print
+    window.print();
+};
+
 onMounted(fetchData);
 
 </script>
@@ -245,7 +250,13 @@ onMounted(fetchData);
                                <Pencil class="w-4 h-4" />
                            </button>
                         </div>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mt-1 block px-2 py-0.5 bg-indigo-50 rounded-full w-fit">โซนที่เปิดให้บริการปกติ</span>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400 block px-2 py-0.5 bg-indigo-50 rounded-full w-fit">โซนที่เปิดให้บริการปกติ</span>
+                            <button @click="handlePrintAll(zone)" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center bg-slate-50 px-2 py-0.5 rounded-full transition-colors">
+                                <Printer class="w-3 h-3 mr-1" />
+                                ปริ้น QR ทั้งโซน
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
@@ -278,7 +289,6 @@ onMounted(fetchData);
 
                         <!-- QR Code Button -->
                         <button 
-                            v-if="table.sessions?.length > 0"
                             @click.stop="openQRModal(table)"
                             class="mt-3 p-2 bg-indigo-100 text-indigo-600 rounded-xl opacity-0 group-hover/table:opacity-100 transition-all hover:bg-white hover:scale-110 active:scale-95 z-20"
                         >
@@ -391,16 +401,30 @@ onMounted(fetchData);
                 <h3 class="text-2xl font-black text-slate-800 tracking-tighter uppercase italic mb-2">QR Code สำหรับโต๊ะ {{ selectedTableForQR.number }}</h3>
                 <p class="text-slate-400 text-sm font-bold mb-8 uppercase tracking-widest">ให้ลูกค้าสแกนเพื่อสั่งอาหาร</p>
                 
-                <div class="bg-slate-50 p-8 rounded-[32px] border border-slate-100 mb-8 inline-block">
-                    <img 
-                        :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(frontendCustomerUrl + '/table/' + selectedTableForQR.sessions[0].id)}`" 
-                        class="w-full h-auto rounded-lg shadow-sm"
-                        alt="QR Code"
-                    />
+                <div class="bg-slate-50 rounded-[32px] p-8 mb-10 border border-slate-100 flex flex-col items-center">
+                    <div v-if="selectedTableForQR?.sessions?.[0]" class="space-y-6">
+                        <img 
+                            :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(frontendCustomerUrl + '/table/' + selectedTableForQR.sessions[0].id)}`" 
+                            class="w-48 h-48 rounded-lg shadow-sm mx-auto"
+                            alt="QR Code"
+                        />
+                        <div class="text-center">
+                            <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 font-mono">Session ID</p>
+                            <p class="text-[10px] font-bold text-indigo-600 break-all opacity-60">{{ selectedTableForQR.sessions[0].id }}</p>
+                        </div>
+                    </div>
+                    <div v-else class="py-12 text-center space-y-4">
+                        <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500">
+                            <QrCode class="w-10 h-10 opacity-20" />
+                        </div>
+                        <h4 class="text-lg font-black text-slate-800 italic uppercase">ยังไม่มีเซสชั่นเปิดอยู่</h4>
+                        <p class="text-xs text-slate-400 font-bold max-w-[240px] mx-auto">คุณต้องทำการ "เปิดโต๊ะ" ในระบบ POS ก่อนเพื่อสร้างคิวอาร์โค้ดสำหรับสั่งอาหาร</p>
+                    </div>
                 </div>
                 
                 <div class="space-y-3">
                     <a 
+                        v-if="selectedTableForQR?.sessions?.[0]"
                         :href="`${frontendCustomerUrl}/table/${selectedTableForQR.sessions[0].id}`" 
                         target="_blank"
                         class="flex items-center justify-center w-full py-4 text-xs font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 rounded-2xl hover:bg-indigo-100 transition-all"
@@ -409,6 +433,7 @@ onMounted(fetchData);
                         เปิดลิงก์สำหรับลูกค้า
                     </a>
                     <button 
+                        v-if="selectedTableForQR?.sessions?.[0]"
                         @click="handlePrint" 
                         class="flex items-center justify-center w-full py-4 text-xs font-black uppercase tracking-widest text-white bg-slate-900 rounded-2xl hover:bg-black transition-all shadow-lg"
                     >
