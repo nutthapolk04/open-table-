@@ -92,6 +92,8 @@ const tablesByZoneAll = computed(() => {
   });
   return groups;
 });
+
+const orderTotal = computed(() => {
   if (!activeTable.value?.orders) return 0;
   return activeTable.value.orders.reduce(
     (sum, item) => sum + item.price * item.qty,
