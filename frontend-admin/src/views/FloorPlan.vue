@@ -17,7 +17,8 @@ import {
   ExternalLink,
   Check,
   Receipt,
-  Sparkles
+  Sparkles,
+  UserPlus
 } from 'lucide-vue-next';
 import api from '../api';
 
@@ -40,13 +41,25 @@ const zoneToDelete = ref<any>(null);
 const showDeleteZoneConfirm = ref(false);
 const deleteError = ref('');
 
+const tiers = ref<any[]>([]);
+const showOpenTableModal = ref(false);
+const selectedTableToOpen = ref<any>(null);
+const openTableForm = ref({ customerCount: 2, tierId: '' });
+
 const frontendCustomerUrl = import.meta.env.VITE_CUSTOMER_FRONTEND_URL || "http://localhost:5174";
 
 const fetchData = async () => {
     loading.value = true;
     try {
-        const res = await api.get('/zones');
-        zones.value = res.data;
+        const [zoneRes, tierRes] = await Promise.all([
+            api.get('/zones'),
+            api.get('/tiers')
+        ]);
+        zones.value = zoneRes.data;
+        tiers.value = tierRes.data;
+        if (tiers.value.length > 0) {
+            openTableForm.value.tierId = tiers.value[0].id;
+        }
     } catch (e) {
         console.error(e);
     } finally {
@@ -187,6 +200,26 @@ const handlePrintAll = (zone: any) => {
     window.print();
 };
 
+const handleOpenTableClick = (table: any) => {
+    selectedTableToOpen.value = table;
+    showOpenTableModal.value = true;
+};
+
+const confirmOpenTable = async () => {
+    if (!selectedTableToOpen.value || !openTableForm.value.tierId) return;
+    try {
+        await api.post('/sessions/open', {
+            tableId: selectedTableToOpen.value.id,
+            tierId: openTableForm.value.tierId,
+            customerCount: openTableForm.value.customerCount
+        });
+        showOpenTableModal.value = false;
+        fetchData();
+    } catch (e: any) {
+        alert('ไม่สามารถเปิดโต๊ะได้: ' + (e.response?.data?.error || e.message));
+    }
+};
+
 onMounted(fetchData);
 
 </script>
@@ -288,12 +321,21 @@ onMounted(fetchData);
                         </div>
 
                         <!-- QR Code Button -->
-                        <button 
-                            @click.stop="openQRModal(table)"
-                            class="mt-3 p-2 bg-indigo-100 text-indigo-600 rounded-xl opacity-0 group-hover/table:opacity-100 transition-all hover:bg-white hover:scale-110 active:scale-95 z-20"
-                        >
-                            <QrCode class="w-4 h-4" />
-                        </button>
+                        <div class="flex items-center space-x-2 mt-3 opacity-0 group-hover/table:opacity-100 transition-all z-20">
+                            <button 
+                                v-if="!table.sessions?.length"
+                                @click.stop="handleOpenTableClick(table)"
+                                class="p-2 bg-emerald-100 text-emerald-600 rounded-xl hover:bg-white hover:scale-110 active:scale-95"
+                            >
+                                <UserPlus class="w-4 h-4" />
+                            </button>
+                            <button 
+                                @click.stop="openQRModal(table)"
+                                class="p-2 bg-indigo-100 text-indigo-600 rounded-xl hover:bg-white hover:scale-110 active:scale-95"
+                            >
+                                <QrCode class="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Dynamic Status Indicator -->
@@ -521,6 +563,50 @@ onMounted(fetchData);
                 <div class="mt-12 flex space-x-4">
                     <button @click="showEditZone = false" class="btn-secondary flex-1">ยกเลิก</button>
                     <button @click="updateZone" class="btn-primary flex-1">บันทึกข้อมูล</button>
+                </div>
+            </div>
+        </div>
+        <!-- Open Table Modal -->
+        <div v-if="showOpenTableModal && selectedTableToOpen" class="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-300" @click="showOpenTableModal = false"></div>
+            <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 p-12">
+                <div class="flex items-center space-x-4 mb-10">
+                    <div class="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                        <UserPlus class="w-6 h-6" />
+                    </div>
+                    <h3 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">เปิดโต๊ะ {{ selectedTableToOpen.number }}</h3>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">จำนวนลูกค้า (ท่าน)</label>
+                        <div class="flex items-center space-x-4">
+                            <button @click="openTableForm.customerCount > 1 ? openTableForm.customerCount-- : null" class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200">-</button>
+                            <span class="text-2xl font-black text-slate-800 w-12 text-center">{{ openTableForm.customerCount }}</span>
+                            <button @click="openTableForm.customerCount++" class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200">+</button>
+                        </div>
+                    </div>
+                    
+                    <div v-if="tiers.length > 0">
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">แพ็กเกจบุฟเฟต์</label>
+                        <select v-model="openTableForm.tierId" class="input-field text-xl font-bold h-16 w-full appearance-none">
+                            <option v-for="tier in tiers" :key="tier.id" :value="tier.id">{{ tier.name }} - ฿{{ tier.price }}</option>
+                        </select>
+                    </div>
+                    <div v-else class="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-700 text-sm font-bold">
+                        กรุณาสร้างแพ็กเกจบุฟเฟต์ในหน้า "จัดการเมนู" ก่อนเปิดโต๊ะครับ
+                    </div>
+                </div>
+
+                <div class="mt-12 flex space-x-4">
+                    <button @click="showOpenTableModal = false" class="btn-secondary flex-1">ยกเลิก</button>
+                    <button 
+                        @click="confirmOpenTable" 
+                        :disabled="tiers.length === 0"
+                        class="btn-primary flex-1 bg-emerald-600 shadow-emerald-100 disabled:opacity-50"
+                    >
+                        ยืนยันการเปิดโต๊ะ
+                    </button>
                 </div>
             </div>
         </div>
