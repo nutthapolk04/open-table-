@@ -34,37 +34,20 @@ const getStatusLabel = (status: string) => {
 // Active Table interaction
 const activeTable = computed(() => store.activeTable);
 const pax = ref(2);
-const tierId = ref("");
-
-// Initialize tierId when tiers are available
-onMounted(() => {
-  if (store.tiers.length > 0) {
-    tierId.value = store.tiers[0].id;
-  }
-});
-
-// Watch tiers for changes (if they load after mount)
-watch(
-  () => store.tiers,
-  (newTiers) => {
-    if (newTiers.length > 0 && !tierId.value) {
-      tierId.value = newTiers[0].id;
-    }
-  },
-  { immediate: true },
-);
+const selectedZone = ref<string | null>(null);
 
 const setActiveTable = (id: string | null) => {
   store.setActiveTable(id);
 };
 
 const openTable = () => {
-  if (!tierId.value) {
-    alert("กรุณาเลือกแพ็กเกจบุฟเฟต์ก่อนเปิดโต๊ะครับ (สร้างได้ที่หน้า Admin Settings)");
+  const defaultTierId = store.tiers[0]?.id;
+  if (!defaultTierId) {
+    alert("กรุณาสร้างแพ็กเกจ (Tier) อย่างน้อย 1 รายการที่หน้า Admin ก่อนครับ");
     return;
   }
   if (activeTable.value) {
-    store.openTable(activeTable.value.id, pax.value, tierId.value);
+    store.openTable(activeTable.value.id, pax.value, defaultTierId);
   }
 };
 
@@ -101,7 +84,14 @@ const handlePrintQr = () => {
   window.print();
 };
 
-const orderTotal = computed(() => {
+const tablesByZoneAll = computed(() => {
+  const groups: Record<string, any[]> = {};
+  store.tables.forEach(table => {
+    if (!groups[table.zone]) groups[table.zone] = [];
+    groups[table.zone].push(table);
+  });
+  return groups;
+});
   if (!activeTable.value?.orders) return 0;
   return activeTable.value.orders.reduce(
     (sum, item) => sum + item.price * item.qty,
@@ -112,6 +102,7 @@ const orderTotal = computed(() => {
 const tablesByZone = computed(() => {
   const groups: Record<string, any[]> = {};
   store.tables.forEach(table => {
+    if (selectedZone.value && table.zone !== selectedZone.value) return;
     if (!groups[table.zone]) groups[table.zone] = [];
     groups[table.zone].push(table);
   });
@@ -181,7 +172,22 @@ const confirmMergeTable = async () => {
           <p class="text-sm text-slate-500 mt-1">{{ t("posModule.liveStatus") }}</p>
         </div>
         <div class="flex space-x-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-          <button class="px-4 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg">{{ t("posModule.allZones") }}</button>
+          <button 
+            @click="selectedZone = null"
+            :class="!selectedZone ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'"
+            class="px-4 py-2 text-sm font-bold rounded-lg transition-all"
+          >
+            {{ t("posModule.allZones") }}
+          </button>
+          <button 
+            v-for="zone in Object.keys(tablesByZoneAll)" 
+            :key="zone"
+            @click="selectedZone = zone"
+            :class="selectedZone === zone ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'"
+            class="px-4 py-2 text-sm font-bold rounded-lg transition-all"
+          >
+            {{ zone }}
+          </button>
         </div>
       </div>
       <div v-if="store.error" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 font-medium">
@@ -255,16 +261,14 @@ const confirmMergeTable = async () => {
               <UserPlus class="w-6 h-6" />
               <span>{{ t("posModule.openTable") }}</span>
             </button>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4">
               <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <p class="text-xs text-slate-400 mb-1">{{ t("posModule.adults") }}</p>
-                <input v-model="pax" type="number" min="1" class="bg-transparent text-xl font-bold w-full outline-none" />
-              </div>
-              <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <p class="text-xs text-slate-400 mb-1">{{ t("posModule.buffetTier") }}</p>
-                <select v-model="tierId" class="bg-transparent text-sm font-bold w-full outline-none appearance-none cursor-pointer">
-                  <option v-for="t in store.tiers" :key="t.id" :value="t.id">{{ t.name }}</option>
-                </select>
+                <p class="text-xs text-slate-400 mb-1 font-bold">{{ t("posModule.adults") }}</p>
+                <div class="flex items-center justify-between">
+                    <button @click="pax > 1 ? pax-- : null" class="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">-</button>
+                    <span class="text-2xl font-black text-slate-800">{{ pax }}</span>
+                    <button @click="pax++" class="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">+</button>
+                </div>
               </div>
             </div>
           </div>
