@@ -41,13 +41,8 @@ const setActiveTable = (id: string | null) => {
 };
 
 const openTable = () => {
-  const defaultTierId = store.tiers[0]?.id;
-  if (!defaultTierId) {
-    alert("กรุณาสร้างแพ็กเกจ (Tier) อย่างน้อย 1 รายการที่หน้า Admin ก่อนครับ");
-    return;
-  }
   if (activeTable.value) {
-    store.openTable(activeTable.value.id, pax.value, defaultTierId);
+    store.openTable(activeTable.value.id, pax.value, undefined);
   }
 };
 

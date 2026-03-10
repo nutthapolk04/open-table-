@@ -71,8 +71,8 @@ model Session {
   id           String      @id @default(uuid())
   tableId      String
   table        Table       @relation(fields: [tableId], references: [id])
-  tierId       String
-  tier         BuffetTier  @relation(fields: [tierId], references: [id])
+  tierId       String?
+  tier         BuffetTier?  @relation(fields: [tierId], references: [id])
   customerCount Int
   status       String      @default("ACTIVE") // ACTIVE, CLOSED
   token        String      @unique // One-time QR Token

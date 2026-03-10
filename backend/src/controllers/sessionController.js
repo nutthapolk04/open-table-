@@ -5,14 +5,19 @@ exports.openSession = async (req, res) => {
     const { tableId, tierId, customerCount } = req.body;
     try {
         const token = crypto.randomBytes(16).toString('hex');
+        const sessionData = {
+            tableId,
+            customerCount,
+            token,
+            status: 'ACTIVE'
+        };
+
+        if (tierId) {
+            sessionData.tierId = tierId;
+        }
+
         const session = await prisma.session.create({
-            data: {
-                tableId,
-                tierId,
-                customerCount,
-                token,
-                status: 'ACTIVE'
-            }
+            data: sessionData
         });
 
         // Update table status

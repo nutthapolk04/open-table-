@@ -206,11 +206,10 @@ const handleOpenTableClick = (table: any) => {
 };
 
 const confirmOpenTable = async () => {
-    if (!selectedTableToOpen.value || !openTableForm.value.tierId) return;
+    if (!selectedTableToOpen.value) return;
     try {
         await api.post('/sessions/open', {
             tableId: selectedTableToOpen.value.id,
-            tierId: openTableForm.value.tierId,
             customerCount: openTableForm.value.customerCount
         });
         showOpenTableModal.value = false;
@@ -587,23 +586,13 @@ onMounted(fetchData);
                         </div>
                     </div>
                     
-                    <div v-if="tiers.length > 0">
-                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">แพ็กเกจบุฟเฟต์</label>
-                        <select v-model="openTableForm.tierId" class="input-field text-xl font-bold h-16 w-full appearance-none">
-                            <option v-for="tier in tiers" :key="tier.id" :value="tier.id">{{ tier.name }} - ฿{{ tier.price }}</option>
-                        </select>
-                    </div>
-                    <div v-else class="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-amber-700 text-sm font-bold">
-                        กรุณาสร้างแพ็กเกจบุฟเฟต์ในหน้า "จัดการเมนู" ก่อนเปิดโต๊ะครับ
-                    </div>
                 </div>
 
                 <div class="mt-12 flex space-x-4">
                     <button @click="showOpenTableModal = false" class="btn-secondary flex-1">ยกเลิก</button>
                     <button 
                         @click="confirmOpenTable" 
-                        :disabled="tiers.length === 0"
-                        class="btn-primary flex-1 bg-emerald-600 shadow-emerald-100 disabled:opacity-50"
+                        class="btn-primary flex-1 bg-emerald-600 shadow-emerald-100"
                     >
                         ยืนยันการเปิดโต๊ะ
                     </button>
