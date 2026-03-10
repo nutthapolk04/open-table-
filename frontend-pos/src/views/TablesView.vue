@@ -71,6 +71,7 @@ const goToOrderList = () => {
 };
 
 // Checkout flow
+const frontendCustomerUrl = import.meta.env.VITE_CUSTOMER_FRONTEND_URL || "http://localhost:5175";
 const showCheckoutModal = ref(false);
 const openCheckout = () => {
   if (activeTable.value) {
@@ -86,7 +87,7 @@ const handleCheckoutSuccess = () => {
 
 const copyOrderLink = () => {
   if (activeTable.value?.sessionId) {
-    const link = `http://localhost:5175/table/${activeTable.value.sessionId}`;
+    const link = `${frontendCustomerUrl}/table/${activeTable.value.sessionId}`;
     navigator.clipboard.writeText(link);
     alert("Order link copied to clipboard!");
   }
@@ -267,7 +268,7 @@ const confirmMergeTable = async () => {
             <div class="p-6 bg-indigo-50 rounded-2xl border border-indigo-100 flex flex-col items-center">
               <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4">{{ t("posModule.customerOrdering") }}</p>
               <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-indigo-100">
-                <qrcode-vue v-if="activeTable.sessionId" :value="`http://localhost:5175/table/${activeTable.sessionId}`" :size="140" level="H" render-as="svg" />
+                <qrcode-vue v-if="activeTable.sessionId" :value="`${frontendCustomerUrl}/table/${activeTable.sessionId}`" :size="140" level="H" render-as="svg" />
               </div>
               <button @click="handlePrintQr" class="w-full flex items-center justify-center space-x-2 py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all font-bold text-sm shadow-sm">
                 <Printer class="w-4 h-4" />
@@ -359,7 +360,7 @@ const confirmMergeTable = async () => {
       <h1 class="text-6xl font-black mb-4">TABLE {{ activeTable?.number }}</h1>
       <p class="text-2xl mb-8 opacity-60">Scan this QR to order your food</p>
       <div class="border-[16px] border-black p-8 rounded-[40px] mb-12 bg-white shadow-2xl">
-        <qrcode-vue v-if="activeTable?.sessionId" :value="`http://localhost:5175/table/${activeTable.sessionId}`" :size="500" level="H" render-as="svg" />
+        <qrcode-vue v-if="activeTable?.sessionId" :value="`${frontendCustomerUrl}/table/${activeTable.sessionId}`" :size="500" level="H" render-as="svg" />
       </div>
       <p class="text-xl font-mono opacity-40 uppercase tracking-widest">OpenTable POS System</p>
       <div class="mt-4 text-sm opacity-30 italic">Thank you for your visit</div>

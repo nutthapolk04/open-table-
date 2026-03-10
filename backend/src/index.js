@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Adjust for production
+        origin: process.env.CORS_ORIGIN || "*",
         methods: ["GET", "POST"]
     }
 });

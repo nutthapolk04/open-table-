@@ -40,7 +40,7 @@ const zoneToDelete = ref<any>(null);
 const showDeleteZoneConfirm = ref(false);
 const deleteError = ref('');
 
-const frontendCustomerUrl = "http://localhost:5174";
+const frontendCustomerUrl = import.meta.env.VITE_CUSTOMER_FRONTEND_URL || "http://localhost:5174";
 
 const fetchData = async () => {
     loading.value = true;
