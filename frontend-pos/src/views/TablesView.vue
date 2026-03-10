@@ -59,7 +59,11 @@ const setActiveTable = (id: string | null) => {
 };
 
 const openTable = () => {
-  if (activeTable.value && tierId.value) {
+  if (!tierId.value) {
+    alert("กรุณาเลือกแพ็กเกจบุฟเฟต์ก่อนเปิดโต๊ะครับ (สร้างได้ที่หน้า Admin Settings)");
+    return;
+  }
+  if (activeTable.value) {
     store.openTable(activeTable.value.id, pax.value, tierId.value);
   }
 };

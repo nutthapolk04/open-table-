@@ -178,6 +178,10 @@ const getTableStatusUI = (status: string) => {
     }
 };
 
+const handlePrint = () => {
+    window.print();
+};
+
 onMounted(fetchData);
 
 </script>
@@ -404,6 +408,13 @@ onMounted(fetchData);
                         <ExternalLink class="w-4 h-4 mr-2" />
                         เปิดลิงก์สำหรับลูกค้า
                     </a>
+                    <button 
+                        @click="handlePrint" 
+                        class="flex items-center justify-center w-full py-4 text-xs font-black uppercase tracking-widest text-white bg-slate-900 rounded-2xl hover:bg-black transition-all shadow-lg"
+                    >
+                        <Printer class="w-4 h-4 mr-2" />
+                        ปริ้น QR Code
+                    </button>
                     <button @click="showQRModal = false" class="w-full py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">
                         ปิดหน้าต่าง
                     </button>
@@ -491,6 +502,15 @@ onMounted(fetchData);
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+@media print {
+  body * { visibility: hidden !important; }
+  .fixed.inset-0.z-\[100\], .fixed.inset-0.z-\[100\] * { visibility: visible !important; }
+  .fixed.inset-0.z-\[100\] { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: white !important; }
+  button { display: none !important; }
+}
+</style>
 
 <style scoped>
 </style>
