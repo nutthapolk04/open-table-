@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import { io } from 'socket.io-client'
 
-const API_BASE_URL = 'http://localhost:3000/api'
-const SOCKET_URL = 'http://localhost:3000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
 
 export const useCustomerStore = defineStore('customer', {
     state: () => ({
