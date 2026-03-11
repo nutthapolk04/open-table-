@@ -19,7 +19,8 @@ import {
   Receipt,
   Sparkles,
   UserPlus,
-  Printer
+  Printer,
+  Bell
 } from 'lucide-vue-next';
 import api from '../api';
 
@@ -650,7 +651,6 @@ onMounted(fetchData);
                     </button>
                 </div>
             </div>
-        </div>
         </div>
 
         <!-- Premium Notification Modal -->
