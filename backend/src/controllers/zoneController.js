@@ -67,16 +67,22 @@ exports.getTables = async (req, res) => {
 };
 exports.updateTable = async (req, res) => {
     const prisma = req.app.get('prisma');
+    const io = req.app.get('io');
     const { id } = req.params;
-    const { number, seats } = req.body;
+    const { number, seats, status } = req.body;
     try {
         const table = await prisma.table.update({
             where: { id },
             data: {
                 number,
-                seats: seats ? parseInt(seats) : undefined
+                seats: seats ? parseInt(seats) : undefined,
+                status: status || undefined
             }
         });
+
+        // Notify all clients that table status changed
+        if (io) io.emit('table-status-updated', table);
+
         res.json(table);
     } catch (error) {
         res.status(500).json({ error: error.message });

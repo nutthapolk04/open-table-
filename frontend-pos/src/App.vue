@@ -35,97 +35,76 @@ const handleSync = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-slate-100 font-sans">
-    <!-- Header (Hide for kitchen as it has its own) -->
-    <header
-      v-if="route.path !== '/kitchen'"
-      class="bg-indigo-700 text-white p-4 shadow-md flex justify-between items-center z-10"
-    >
-      <div class="flex items-center space-x-6">
-        <div class="flex items-center space-x-2 mr-4">
+  <div class="flex h-screen bg-slate-100 font-sans overflow-hidden">
+    <!-- Professional Dark Sidebar -->
+    <aside v-if="route.path !== '/kitchen'" class="w-24 bg-[#1e2235] flex flex-col items-center py-6 shrink-0 z-20 shadow-2xl">
+      <div class="mb-10 text-white flex flex-col items-center">
+        <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg mb-2">
           <Monitor class="w-6 h-6" />
-          <h1 class="text-xl font-bold tracking-tight uppercase">
-            {{ getPageTitle() }}
-          </h1>
         </div>
-        
-        <!-- Tab Navigation -->
-        <nav class="hidden md:flex bg-indigo-800/50 rounded-lg p-1">
-          <router-link 
-            to="/tables" 
-            class="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
-            :class="route.path.startsWith('/tables') || route.path.startsWith('/order') ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-200 hover:text-white'"
-          >
-            POS System
-          </router-link>
-          <router-link 
-            to="/kitchen" 
-            class="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
-            :class="route.path === '/kitchen' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-200 hover:text-white'"
-          >
-            Kitchen (KDS)
-          </router-link>
-          <router-link 
-            to="/settings" 
-            class="px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-widest transition-all"
-            :class="route.path === '/settings' ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-200 hover:text-white'"
-          >
-            Admin Settings
-          </router-link>
-        </nav>
+        <span class="text-[10px] font-black uppercase tracking-tighter opacity-50">pos</span>
       </div>
-      
-      <div class="flex items-center space-x-4">
-        <!-- Add Kitchen Quick Link for Mobile -->
-        <router-link 
-          v-if="route.path !== '/kitchen'"
-          to="/kitchen" 
-          class="md:hidden p-2 bg-indigo-600 rounded-lg"
-          title="Go to Kitchen"
-        >
-          <ChefHat class="w-5 h-5" />
+
+      <nav class="flex-1 flex flex-col space-y-4">
+        <router-link to="/tables" class="w-14 h-14 rounded-2xl flex items-center justify-center transition-all group relative" :class="route.path.startsWith('/tables') || route.path.startsWith('/order') ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'">
+          <Monitor class="w-6 h-6" />
+          <div class="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl border border-slate-700">POS SYSTEM</div>
         </router-link>
 
-        <button
-          @click="toggleLanguage"
-          class="flex items-center text-white/80 hover:text-white transition-colors"
-          title="Switch Language"
-        >
-          <Globe class="w-5 h-5 mr-1" />
-          <span class="text-sm font-bold uppercase">{{ locale }}</span>
+        <router-link to="/kitchen" class="w-14 h-14 rounded-2xl flex items-center justify-center transition-all group relative" :class="route.path === '/kitchen' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'">
+          <ChefHat class="w-6 h-6" />
+          <div class="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl border border-slate-700">KITCHEN KDS</div>
+        </router-link>
+
+        <router-link to="/settings" class="w-14 h-14 rounded-2xl flex items-center justify-center transition-all group relative" :class="route.path.startsWith('/settings') ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'">
+          <Monitor class="w-6 h-6" />
+          <div class="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl border border-slate-700">ADMIN SETTINGS</div>
+        </router-link>
+      </nav>
+
+      <div class="mt-auto flex flex-col space-y-4">
+        <button @click="toggleLanguage" class="w-14 h-14 rounded-2xl flex flex-col items-center justify-center text-slate-500 hover:bg-slate-800 transition-all">
+          <Globe class="w-5 h-5 mb-1" />
+          <span class="text-[9px] font-black uppercase">{{ locale }}</span>
         </button>
-        <div class="h-6 w-px bg-white/30 hidden md:block"></div>
-        <button
-          @click="handleSync"
-          :disabled="store.loading"
-          class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors disabled:opacity-50"
-        >
-          <RotateCw
-            class="w-4 h-4"
-            :class="{ 'animate-spin': store.loading }"
-          />
-          <span class="text-sm font-medium">{{
-            store.loading ? "Syncing..." : "Sync Data"
-          }}</span>
-        </button>
-        <div class="h-8 w-px bg-white/20"></div>
-        <button
-          class="text-white/80 hover:text-white transition-colors"
-          title="Logout"
-        >
+        <button class="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-500 hover:bg-red-900/30 hover:text-red-400 transition-all">
           <LogOut class="w-6 h-6" />
         </button>
       </div>
-    </header>
+    </aside>
 
-    <!-- Main Wrapper -->
-    <main class="flex-1 overflow-hidden flex flex-col">
-      <router-view v-slot="{ Component }" class="flex-1 flex flex-col overflow-hidden">
-        <transition name="fade" mode="out-in" class="flex-1 flex flex-col overflow-hidden">
-          <component :is="Component" class="flex-1 overflow-hidden" />
-        </transition>
-      </router-view>
-    </main>
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Secondary Top Header -->
+      <header v-if="route.path !== '/kitchen'" class="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between z-10 shrink-0 shadow-sm">
+        <div class="flex items-center space-x-4">
+           <div class="p-2 bg-indigo-50 rounded-xl">
+             <Monitor class="w-5 h-5 text-indigo-600" />
+           </div>
+           <div>
+             <h1 class="text-sm font-black text-slate-800 uppercase tracking-widest">{{ getPageTitle() }}</h1>
+             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Branch: Rama 9 - Main Store</p>
+           </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+           <div class="flex items-center bg-slate-50 rounded-xl border border-slate-200 p-1">
+             <button @click="handleSync" :disabled="store.loading" class="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest flex items-center space-x-2 transition-all" :class="store.loading ? 'text-slate-400' : 'text-slate-600 hover:bg-white hover:shadow-sm'">
+                <RotateCw class="w-3 h-3" :class="{ 'animate-spin': store.loading }" />
+                <span>{{ store.loading ? 'Syncing...' : 'Sync Data' }}</span>
+             </button>
+           </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-hidden">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+    </div>
   </div>
 </template>
 

@@ -1,8 +1,10 @@
+<!-- <script> tag here -->
 <script setup lang="ts">
+/// <reference types="vite/client" />
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X, Users } from "lucide-vue-next";
+import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X, Users, Sparkles, Minus, Plus } from "lucide-vue-next";
 import QrcodeVue from "qrcode.vue";
 import { usePosStore } from "../stores/pos";
 import CheckoutModal from "../components/CheckoutModal.vue";
@@ -40,9 +42,24 @@ const setActiveTable = (id: string | null) => {
   store.setActiveTable(id);
 };
 
-const openTable = () => {
+const selectedTierId = ref<string | null>(null);
+
+watch(() => store.tiers, (newTiers) => {
+  if (newTiers.length > 0 && !selectedTierId.value) {
+    selectedTierId.value = newTiers[0].id;
+  }
+}, { immediate: true });
+
+const openTable = async () => {
   if (activeTable.value) {
-    store.openTable(activeTable.value.id, pax.value, undefined);
+    try {
+      if (!selectedTierId.value && store.tiers.length > 0) {
+        selectedTierId.value = store.tiers[0].id;
+      }
+      await store.openTable(activeTable.value.id, pax.value, selectedTierId.value || undefined);
+    } catch (err: any) {
+      alert("ไม่สามารถเปิดโต๊ะได้: " + err);
+    }
   }
 };
 
@@ -75,9 +92,6 @@ const copyOrderLink = () => {
   }
 };
 
-const handlePrintQr = () => {
-  window.print();
-};
 
 const tablesByZoneAll = computed(() => {
   const groups: Record<string, any[]> = {};
@@ -115,6 +129,16 @@ const goToZoneTables = (zone: string) => {
 
 const getVisibleTables = (tables: any[]) => {
   return tables.slice(0, TABLES_PER_ZONE);
+};
+
+const isPrinting = ref(false);
+const handlePrintQr = async () => {
+  isPrinting.value = true;
+  // Wait for next tick and a small delay for QR to render
+  setTimeout(() => {
+    window.print();
+    isPrinting.value = false;
+  }, 500);
 };
 
 // Move & Merge Logics
@@ -157,6 +181,14 @@ const confirmMergeTable = async () => {
     } catch (err) {
         alert("Failed to merge tables");
     }
+};
+
+const cleanTable = async () => {
+  if (activeTable.value && activeTable.value.status === 'CLEANING') {
+    if (confirm(`ยืนยันการทำความสะอาดโต๊ะ ${activeTable.value.number} เสร็จสิ้น?`)) {
+      await store.markTableCleaned(activeTable.value.id);
+    }
+  }
 };
 </script>
 
@@ -207,29 +239,57 @@ const confirmMergeTable = async () => {
             </button>
           </h3>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            <div v-for="table in getVisibleTables(tables)" :key="table.id" class="card group cursor-pointer hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300 relative border-2 bg-white rounded-xl shadow-sm overflow-hidden" :class="activeTable?.id === table.id ? 'border-indigo-500' : 'border-slate-100'" @click="setActiveTable(table.id)">
-              <div class="p-6">
-                <div class="flex justify-between items-start mb-4">
-                  <span class="text-2xl font-black transition-colors" :class="activeTable?.id === table.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'">{{ table.number }}</span>
-                  <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border', getStatusColor(table.status)]">{{ getStatusLabel(table.status) }}</span>
+            <div v-for="table in getVisibleTables(tables)" :key="table.id" 
+              class="card group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transform transition-all duration-500 relative border-2 rounded-[2rem] overflow-hidden" 
+              :class="[
+                activeTable?.id === table.id ? 'border-indigo-500 shadow-indigo-100' : 'border-slate-100',
+                table.status === 'OCCUPIED' ? 'bg-gradient-to-br from-indigo-50/50 to-white shadow-lg shadow-indigo-50/50 border-indigo-100' : 'bg-white shadow-sm',
+                table.status === 'CHECKING_BILL' ? 'bg-amber-50/50 border-amber-200' : '',
+                table.status === 'CLEANING' ? 'bg-slate-50 border-slate-200 outline-dashed outline-1 outline-slate-300' : ''
+              ]" 
+              @click="setActiveTable(table.id)">
+              
+              <!-- Left accent bar for active statuses -->
+              <div v-if="table.status === 'OCCUPIED'" class="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-600"></div>
+              <div v-if="table.status === 'CHECKING_BILL'" class="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500"></div>
+
+              <div class="p-7">
+                <div class="flex justify-between items-start mb-6">
+                  <div class="flex flex-col">
+                    <span class="text-3xl font-black tracking-tight transition-colors" 
+                      :class="[
+                        activeTable?.id === table.id ? 'text-indigo-600' : 
+                        (table.status === 'OCCUPIED' ? 'text-indigo-900' : 'text-slate-300 group-hover:text-indigo-400')
+                      ]">
+                      {{ table.number }}
+                    </span>
+                    <span v-if="table.status === 'OCCUPIED'" class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mt-1">active session</span>
+                  </div>
+                  <span :class="['text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border-2 shadow-sm', getStatusColor(table.status)]">
+                    {{ getStatusLabel(table.status) }}
+                  </span>
                 </div>
-                <div class="flex items-center space-x-1.5 mb-2">
-                    <div class="px-2 py-0.5 rounded-md text-[10px] font-black flex items-center space-x-1 transition-colors"
+
+                <div class="flex items-center justify-between">
+                    <div class="px-3 py-1.5 rounded-xl text-xs font-black flex items-center space-x-2 transition-all shadow-sm"
                         :class="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'">
-                        <Users class="w-3 h-3" :class="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL' ? 'text-indigo-200' : 'text-slate-400'" />
-                        <span v-if="table.pax">
-                            {{ table.pax }} <span class="opacity-40 font-medium">/</span> {{ table.seats }}
+                        <Users class="w-4 h-4" :class="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL' ? 'text-indigo-200' : 'text-slate-400'" />
+                        <span v-if="table.pax" class="flex items-center">
+                            {{ table.pax }} <span class="mx-1 opacity-40 font-bold">/</span> {{ table.seats }}
                         </span>
                         <span v-else>
-                            {{ table.seats }} {{ t("posModule.seats") }}
+                            {{ table.seats }}
                         </span>
                     </div>
+
+                    <div v-if="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL'" class="flex flex-col items-end">
+                       <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{{ t("posModule.elapsedTime") }}</span>
+                       <span class="text-sm font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100/50">{{ table.time }}</span>
+                    </div>
+                    <div v-else class="opacity-10 group-hover:opacity-30 transition-opacity">
+                       <UserPlus class="w-6 h-6 text-slate-400" />
+                    </div>
                 </div>
-                <div v-if="table.status === 'OCCUPIED' || table.status === 'CHECKING_BILL'" class="space-y-2">
-                  <p class="text-xs font-medium text-slate-400">{{ t("posModule.elapsedTime") }}</p>
-                  <p class="text-lg font-bold text-indigo-700 font-mono">{{ table.time }}</p>
-                </div>
-                <div v-else class="h-10 flex items-center justify-center opacity-10"><UserPlus class="w-8 h-8" /></div>
               </div>
             </div>
           </div>
@@ -252,17 +312,26 @@ const confirmMergeTable = async () => {
         </div>
         <div class="p-8 space-y-6 custom-scrollbar" style="flex: 1; overflow-y: auto; min-height: 0;">
           <div v-if="activeTable.status === 'FREE' || activeTable.status === 'CLEANING'" class="space-y-4">
-            <button @click="openTable" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-14 flex items-center justify-center space-x-3 text-lg font-bold shadow-md transition-all active:scale-95">
+            <button v-if="activeTable.status === 'CLEANING'" @click="cleanTable" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-14 flex items-center justify-center space-x-3 text-lg font-bold shadow-md transition-all active:scale-95 mb-4 border border-emerald-500/20">
+              <Sparkles class="w-6 h-6" />
+              <span>ทำความสะอาดเสร็จสิ้น</span>
+            </button>
+            <button @click="openTable" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-14 flex items-center justify-center space-x-3 text-lg font-bold shadow-md transition-all active:scale-95 border border-indigo-500/20">
               <UserPlus class="w-6 h-6" />
               <span>{{ t("posModule.openTable") }}</span>
             </button>
             <div class="grid grid-cols-1 gap-4">
+
               <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <p class="text-xs text-slate-400 mb-1 font-bold">{{ t("posModule.adults") }}</p>
-                <div class="flex items-center justify-between">
-                    <button @click="pax > 1 ? pax-- : null" class="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">-</button>
+                <p class="text-[10px] text-slate-400 mb-2 font-black uppercase tracking-widest">{{ t("posModule.adults") }}</p>
+                <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100">
+                    <button @click="pax > 1 ? pax-- : null" class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">
+                      <Minus class="w-5 h-5" />
+                    </button>
                     <span class="text-2xl font-black text-slate-800">{{ pax }}</span>
-                    <button @click="pax++" class="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">+</button>
+                    <button @click="pax++" class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">
+                      <Plus class="w-5 h-5" />
+                    </button>
                 </div>
               </div>
             </div>
@@ -358,7 +427,7 @@ const confirmMergeTable = async () => {
   </div>
 
   <CheckoutModal v-model="showCheckoutModal" :table="activeTable" @checkout-success="handleCheckoutSuccess" />
-  <div class="hidden print:block print:fixed print:inset-0 print:bg-white print:z-[9999]">
+  <div v-if="isPrinting" class="hidden print:block print:fixed print:inset-0 print:bg-white print:z-[9999]">
     <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-white" v-if="activeTable">
       <h1 class="text-6xl font-black mb-4">TABLE {{ activeTable?.number }}</h1>
       <p class="text-2xl mb-8 opacity-60">Scan this QR to order your food</p>
@@ -396,8 +465,11 @@ const confirmMergeTable = async () => {
 }
 
 @media print {
-  body * { visibility: hidden !important; }
-  .print\:block, .print\:block * { visibility: visible !important; }
-  .print\:fixed { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; }
+  body * { 
+    visibility: hidden !important; 
+  }
+  .print\:block, .print\:block * { 
+    visibility: visible !important; 
+  }
 }
 </style>

@@ -175,18 +175,45 @@ const handleStatusUpdate = async (orderId: string, currentStatus: string) => {
 
 <template>
   <div class="h-full flex flex-col font-sans" v-if="activeTable">
-    <div class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0">
-      <div class="flex items-center space-x-4">
-        <button @click="backToTables" class="p-2 -ml-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
-          <ArrowLeft class="w-5 h-5" />
+    <div class="bg-white border-b border-slate-200 px-6 h-16 flex items-center justify-between shrink-0 shadow-sm z-10">
+      <div class="flex items-center space-x-6">
+        <button @click="backToTables" class="p-2 -ml-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all">
+          <ArrowLeft class="w-6 h-6" />
         </button>
-        <h2 class="text-xl font-bold text-slate-800">{{ t("posModule.title") }}</h2>
-      </div>
-      <div class="relative w-64">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search class="h-4 w-4 text-slate-400" />
+        
+        <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 space-x-2">
+           <Monitor class="w-4 h-4 text-slate-400" />
+           <span class="text-xs font-black text-slate-600 uppercase tracking-widest">Rama 9 Branch</span>
         </div>
-        <input v-model="searchQuery" type="text" :placeholder="t('posModule.search')" class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors" />
+
+        <div class="h-6 w-px bg-slate-200"></div>
+
+        <div class="flex items-center space-x-4">
+           <div class="flex items-center space-x-2">
+             <div class="w-8 h-4 bg-indigo-600 rounded-full relative">
+               <div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+             </div>
+             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Open Menu</span>
+           </div>
+           <div class="flex items-center space-x-2">
+             <div class="w-8 h-4 bg-slate-200 rounded-full relative">
+               <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+             </div>
+             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Print Receipt</span>
+           </div>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <div class="relative w-72">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <Search class="h-4 w-4 text-slate-400" />
+          </div>
+          <input v-model="searchQuery" type="text" :placeholder="t('posModule.search')" class="block w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 sm:text-sm transition-all" />
+        </div>
+        <button class="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all">
+           <Monitor class="w-5 h-5" />
+        </button>
       </div>
     </div>
     <div class="flex-1 flex overflow-hidden">
@@ -199,14 +226,13 @@ const handleStatusUpdate = async (orderId: string, currentStatus: string) => {
           </div>
         </div>
         <div class="flex-1 overflow-y-auto p-6 hidden-scrollbar">
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            <div v-for="item in filteredMenu" :key="item.id" class="relative group">
+        <div class="flex-1 overflow-y-auto p-6 hidden-scrollbar">
+          <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div v-for="item in filteredMenu" :key="item.id" class="relative group h-64">
               <!-- Staff Action: Toggle Status -->
               <button 
                 @click.stop="store.toggleMenuStatus(item.id, item.status || 'AVAILABLE')" 
-                class="absolute top-2 right-2 p-1.5 rounded-lg z-10 transition-all shadow-sm opacity-0 group-hover:opacity-100"
-                :class="item.status === 'SOLD_OUT' ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' : 'bg-red-100 text-red-600 hover:bg-red-200'"
-                :title="item.status === 'SOLD_OUT' ? 'Mark as Available' : 'Mark as Sold Out'"
+                class="absolute top-2 right-2 p-2 rounded-xl z-20 transition-all shadow-lg opacity-0 group-hover:opacity-100 bg-white/90 backdrop-blur-md border border-slate-100 text-slate-600 hover:text-indigo-600 active:scale-90"
               >
                 <XCircle class="w-4 h-4" v-if="item.status !== 'SOLD_OUT'" />
                 <CheckCircle2 class="w-4 h-4" v-else />
@@ -214,26 +240,49 @@ const handleStatusUpdate = async (orderId: string, currentStatus: string) => {
               
               <button 
                 @click="item.status !== 'SOLD_OUT' && addToCart(item)" 
-                class="w-full bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center"
+                class="w-full h-full relative rounded-[2rem] overflow-hidden shadow-lg transition-all border-4"
                 :class="[
-                  item.status === 'SOLD_OUT' 
-                    ? 'opacity-50 grayscale cursor-not-allowed' 
-                    : 'hover:border-indigo-300 active:scale-95 group-hover:bg-slate-50'
+                  item.status === 'SOLD_OUT' ? 'opacity-40 grayscale pointer-events-none' : 'hover:scale-[1.02] active:scale-95 border-transparent hover:border-indigo-400'
                 ]"
               >
-                <div class="text-4xl mb-3 transition-transform" :class="{'group-hover:scale-110': item.status !== 'SOLD_OUT'}">
-                  {{ item.image }}
-                </div>
-                
-                <div v-if="item.status === 'SOLD_OUT'" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                   <div class="bg-red-500 text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-widest shadow-lg -rotate-12 border-2 border-white">Sold Out</div>
+                <!-- Image with fallback -->
+                <img 
+                  v-if="item.image && item.image.startsWith('http')" 
+                  :src="item.image" 
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                  :alt="item.name"
+                />
+                <div v-else class="w-full h-full bg-slate-200 flex items-center justify-center text-6xl group-hover:scale-110 transition-transform duration-500">
+                  {{ item.image || '🍽️' }}
                 </div>
 
-                <span class="font-bold text-slate-800 text-sm mb-1 leading-tight">{{ item.name }}</span>
-                <span class="text-indigo-600 font-semibold text-sm">{{ item.price ? '฿' + item.price : '-' }}</span>
+                <!-- Price Badge -->
+                <div v-if="item.price" class="absolute top-4 left-4 z-10 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-xl shadow-md border border-white/50">
+                   <div class="text-[10px] font-black text-slate-400 uppercase leading-none mb-0.5 whitespace-nowrap">Price</div>
+                   <div class="text-sm font-black text-slate-800 leading-none">฿{{ item.price }}</div>
+                </div>
+
+                <!-- Title Overlay Card -->
+                <div class="absolute bottom-0 inset-x-0 p-4 pt-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                  <h4 class="text-white font-black text-sm leading-tight drop-shadow-md text-center">{{ item.name }}</h4>
+                  <div v-if="item.nameTh" class="text-white/60 text-[10px] font-medium text-center mt-1 truncate">{{ item.nameTh }}</div>
+                </div>
+
+                <!-- Sold Out Overlay -->
+                <div v-if="item.status === 'SOLD_OUT'" class="absolute inset-0 bg-slate-900/40 flex items-center justify-center backdrop-blur-[2px]">
+                   <div class="bg-red-600 text-white font-black text-xs px-5 py-2 rounded-full uppercase tracking-widest shadow-2xl border-2 border-white/20 -rotate-12">
+                     Sold Out
+                   </div>
+                </div>
+
+                <!-- Quantity Indicator in Cart -->
+                <div v-if="cart.find(i => i.id === item.id)" class="absolute top-4 right-4 bg-indigo-600 text-white w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shadow-lg animate-bounce border-2 border-white">
+                   {{ cart.find(i => i.id === item.id)?.qty }}
+                </div>
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
       <div class="w-96 bg-white border-l border-slate-200 flex flex-col shrink-0">

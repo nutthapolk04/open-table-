@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { defineStore } from "pinia";
 import api from "../api";
 import { io, Socket } from "socket.io-client";
@@ -35,6 +36,7 @@ export interface Tier {
 export interface MenuItem {
   id: string;
   name: string;
+  nameTh?: string;
   categoryId: string;
   category: string;
   price: number;
@@ -164,11 +166,12 @@ export const usePosStore = defineStore("pos", {
       this.socket.on("order-voided", () => this.fetchInitialData());
       this.socket.on("session-opened", () => this.fetchInitialData());
       this.socket.on("session-closed", () => this.fetchInitialData());
+      this.socket.on("table-status-updated", () => this.fetchInitialData());
     },
     setActiveTable(id: string | null) {
       this.activeTableId = id;
     },
-    async openTable(id: string, pax: number, tierId: string) {
+    async openTable(id: string, pax: number, tierId?: string) {
       try {
         await api.post("/sessions/open", {
           tableId: id,
@@ -178,6 +181,7 @@ export const usePosStore = defineStore("pos", {
         await this.fetchInitialData(); // Refresh state
       } catch (err: any) {
         this.error = err.message;
+        throw err;
       }
     },
     async checkoutTable(sessionId: string) {
@@ -246,6 +250,15 @@ export const usePosStore = defineStore("pos", {
     async mergeTables(sourceSessionId: string, targetSessionId: string) {
       try {
         await api.post("/sessions/merge", { sourceSessionId, targetSessionId });
+        await this.fetchInitialData();
+      } catch (err: any) {
+        this.error = err.message;
+        throw err;
+      }
+    },
+    async markTableCleaned(tableId: string) {
+      try {
+        await api.patch(`/tables/${tableId}`, { status: "FREE" });
         await this.fetchInitialData();
       } catch (err: any) {
         this.error = err.message;

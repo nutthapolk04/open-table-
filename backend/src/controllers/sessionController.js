@@ -7,12 +7,12 @@ exports.openSession = async (req, res) => {
         const token = crypto.randomBytes(16).toString('hex');
         const sessionData = {
             tableId,
-            customerCount,
+            customerCount: parseInt(customerCount) || 1,
             token,
             status: 'ACTIVE'
         };
 
-        if (tierId) {
+        if (tierId && tierId !== 'undefined' && tierId !== 'null') {
             sessionData.tierId = tierId;
         }
 
@@ -28,6 +28,7 @@ exports.openSession = async (req, res) => {
 
         res.json(session);
     } catch (error) {
+        console.error('Session Open Error:', error);
         res.status(500).json({ error: error.message });
     }
 };
