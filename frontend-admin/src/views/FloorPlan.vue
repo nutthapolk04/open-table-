@@ -18,7 +18,8 @@ import {
   Check,
   Receipt,
   Sparkles,
-  UserPlus
+  UserPlus,
+  Printer
 } from 'lucide-vue-next';
 import api from '../api';
 
@@ -47,6 +48,8 @@ const selectedTableToOpen = ref<any>(null);
 const openTableForm = ref({ customerCount: 2, tierId: '' });
 
 const frontendCustomerUrl = import.meta.env.VITE_CUSTOMER_FRONTEND_URL || "http://localhost:5174";
+const printingMode = ref<'single' | 'zone'>('single');
+const printingZone = ref<any>(null);
 
 const fetchData = async () => {
     loading.value = true;
@@ -192,12 +195,16 @@ const getTableStatusUI = (status: string) => {
 };
 
 const handlePrint = () => {
+    printingMode.value = 'single';
     window.print();
 };
 
 const handlePrintAll = (zone: any) => {
-    // We'll implement a simple print all by opening a new window or just triggering a full-zone print
-    window.print();
+    printingMode.value = 'zone';
+    printingZone.value = zone;
+    setTimeout(() => {
+        window.print();
+    }, 100);
 };
 
 const handleOpenTableClick = (table: any) => {
@@ -600,17 +607,271 @@ onMounted(fetchData);
             </div>
         </div>
     </Teleport>
+
+    <!-- Dedicated Print Area Teleport -->
+    <Teleport to="body">
+        <div class="print-area">
+            <!-- Single Table Print -->
+            <div v-if="printingMode === 'single' && selectedTableForQR && selectedTableForQR.sessions?.[0]" class="receipt-container">
+                <div class="receipt-header">
+                    <div class="receipt-logo">OT</div>
+                    <p class="receipt-brand">OpenTable</p>
+                    <div class="receipt-divider"></div>
+                    <h2 class="receipt-table-num">โต๊ะ {{ selectedTableForQR.number }}</h2>
+                    <p class="receipt-welcome">ยินดีต้อนรับ / Welcome</p>
+                </div>
+
+                <div class="receipt-qr-wrapper">
+                    <img 
+                        :src="`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(frontendCustomerUrl + '/table/' + selectedTableForQR.sessions[0].id)}`" 
+                        class="receipt-qr-img"
+                        alt="QR Code"
+                    />
+                </div>
+
+                <div class="receipt-footer">
+                    <p class="receipt-instruction">
+                        สแกนเพื่อสั่งอาหาร<br/>
+                        <span class="receipt-instruction-en">Scan to start ordering</span>
+                    </p>
+                    <div class="receipt-session-info">
+                        <p class="receipt-session-label">Session ID</p>
+                        <p class="receipt-session-id">{{ selectedTableForQR.sessions[0].id }}</p>
+                    </div>
+                    <p class="receipt-system-tag">Powered by OpenTable Systems</p>
+                </div>
+            </div>
+
+            <!-- Zone All Tables Print -->
+            <div v-else-if="printingMode === 'zone' && printingZone" class="zone-print-wrapper">
+                <template v-for="table in printingZone.tables" :key="table.id">
+                    <div v-if="table.sessions?.[0]" class="receipt-container zone-receipt">
+                        <div class="receipt-header">
+                            <div class="receipt-logo">OT</div>
+                            <p class="receipt-brand">OpenTable</p>
+                            <div class="receipt-divider"></div>
+                            <h2 class="receipt-table-num">โต๊ะ {{ table.number }}</h2>
+                            <p class="receipt-welcome">{{ printingZone.name }}</p>
+                        </div>
+
+                        <div class="receipt-qr-wrapper">
+                            <img 
+                                :src="`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(frontendCustomerUrl + '/table/' + table.sessions[0].id)}`" 
+                                class="receipt-qr-img"
+                                alt="QR Code"
+                            />
+                        </div>
+
+                        <div class="receipt-footer">
+                            <p class="receipt-instruction">
+                                สแกนเพื่อสั่งอาหาร<br/>
+                                <span class="receipt-instruction-en">Scan to start ordering</span>
+                            </p>
+                            <div class="receipt-session-info">
+                                <p class="receipt-session-label">Session ID</p>
+                                <p class="receipt-session-id">{{ table.sessions[0].id }}</p>
+                            </div>
+                            <p class="receipt-system-tag">Powered by OpenTable Systems</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </Teleport>
   </div>
 </template>
 
-<style scoped>
-@media print {
-  body * { visibility: hidden !important; }
-  .fixed.inset-0.z-\[100\], .fixed.inset-0.z-\[100\] * { visibility: visible !important; }
-  .fixed.inset-0.z-\[100\] { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: white !important; }
-  button { display: none !important; }
-}
-</style>
 
-<style scoped>
+<style>
+/* Global Styles for Printing - Must NOT be scoped */
+.print-area {
+  display: none;
+}
+
+@media print {
+  /* Set explicit page size for 80mm heat printers */
+  @page {
+    margin: 0;
+    size: 80mm auto;
+  }
+  
+  /* Reset body and hide everything */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 80mm !important;
+    overflow: visible !important;
+  }
+
+  /* Force hide all UI elements including modals and app root */
+  #app, 
+  [id^="headlessui-portal"],
+  .fixed,
+  .absolute,
+  header,
+  aside,
+  button,
+  .modal-backdrop {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Explicitly show only the print section */
+  .print-area {
+    display: block !important;
+    visibility: visible !important;
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+  }
+
+  .print-area * {
+    visibility: visible !important;
+  }
+
+  /* Receipt Styles */
+  .receipt-container {
+    width: 80mm !important;
+    padding: 10mm 5mm !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    background: white !important;
+    color: black !important;
+    font-family: 'Outfit', 'Inter', sans-serif !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  .receipt-header {
+    margin-bottom: 8mm !important;
+    width: 100% !important;
+  }
+
+  .receipt-logo {
+    width: 50px !important;
+    height: 50px !important;
+    background: black !important;
+    color: white !important;
+    font-weight: 900 !important;
+    font-size: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto 10px !important;
+    border-radius: 12px !important;
+    font-style: italic !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .receipt-brand {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    font-style: italic !important;
+    text-transform: uppercase !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 0 10px 0 !important;
+    line-height: 1 !important;
+  }
+
+  .receipt-divider {
+    height: 1px !important;
+    background: black !important;
+    width: 100% !important;
+    margin: 15px 0 !important;
+    opacity: 0.15 !important;
+  }
+
+  .receipt-table-num {
+    font-size: 64px !important;
+    font-weight: 900 !important;
+    margin: 5px 0 !important;
+    letter-spacing: -0.03em !important;
+    line-height: 0.9 !important;
+  }
+
+  .receipt-welcome {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    opacity: 0.7 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-top: 5px !important;
+  }
+
+  .receipt-qr-wrapper {
+    margin: 10mm auto !important;
+    padding: 10px !important;
+    border: 2px solid black !important;
+    border-radius: 20px !important;
+    display: inline-block !important;
+    background: white !important;
+  }
+
+  .receipt-qr-img {
+    width: 170px !important;
+    height: 170px !important;
+    display: block !important;
+  }
+
+  .receipt-instruction {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    font-style: italic !important;
+    line-height: 1.3 !important;
+    margin-bottom: 8mm !important;
+  }
+
+  .receipt-instruction-en {
+    font-size: 13px !important;
+    opacity: 0.6 !important;
+    font-style: normal !important;
+    display: block !important;
+    margin-top: 5px !important;
+  }
+
+  .receipt-session-info {
+    width: 100% !important;
+    border-top: 1px dashed rgba(0,0,0,0.2) !important;
+    padding-top: 15px !important;
+    margin-bottom: 15px !important;
+  }
+
+  .receipt-session-label {
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    margin-bottom: 4px !important;
+    opacity: 0.5 !important;
+  }
+
+  .receipt-session-id {
+    font-size: 8px !important;
+    font-family: monospace !important;
+    word-break: break-all !important;
+    opacity: 0.4 !important;
+  }
+
+  .receipt-system-tag {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    opacity: 0.3 !important;
+    text-transform: uppercase !important;
+    margin-top: 10px !important;
+  }
+
+  .zone-receipt {
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+  }
+  
+  
+  .zone-receipt:last-child {
+    page-break-after: auto !important;
+  }
+}
 </style>
