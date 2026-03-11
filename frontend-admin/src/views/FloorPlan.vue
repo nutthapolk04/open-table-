@@ -42,6 +42,10 @@ const zoneToDelete = ref<any>(null);
 const showDeleteZoneConfirm = ref(false);
 const deleteError = ref('');
 
+const tableToDelete = ref<any>(null);
+const showDeleteTableConfirm = ref(false);
+
+
 const tiers = ref<any[]>([]);
 const showOpenTableModal = ref(false);
 const selectedTableToOpen = ref<any>(null);
@@ -110,13 +114,22 @@ const translateError = (msg: string) => {
     return msg;
 };
 
-const deleteTable = async (id: string) => {
-    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบโต๊ะนี้?')) return;
+const handleDeleteTableClick = (table: any) => {
+    tableToDelete.value = table;
+    showDeleteTableConfirm.value = true;
+};
+
+const confirmDeleteTable = async () => {
+    if (!tableToDelete.value) return;
     try {
-        await api.delete(`/tables/${id}`);
+        await api.delete(`/tables/${tableToDelete.value.id}`);
+        showDeleteTableConfirm.value = false;
+        tableToDelete.value = null;
         fetchData();
     } catch (e: any) {
-        alert(translateError(e.response?.data?.error) || 'เกิดข้อผิดพลาดในการลบโต๊ะ');
+        const errorMsg = translateError(e.response?.data?.error) || 'เกิดข้อผิดพลาดในการลบโต๊ะ';
+        alert(errorMsg);
+        showDeleteTableConfirm.value = false;
     }
 };
 
@@ -358,7 +371,7 @@ onMounted(fetchData);
                             <Pencil class="w-3 h-3" />
                         </button>
                         <button 
-                            @click="deleteTable(table.id)"
+                            @click="handleDeleteTableClick(table)"
                             class="w-8 h-8 bg-white border border-slate-200 rounded-full shadow-md flex items-center justify-center text-slate-700 hover:text-red-500 hover:border-red-100 transition-all"
                         >
                             <Trash2 class="w-3 h-3" />
@@ -517,6 +530,33 @@ onMounted(fetchData);
                             class="text-white h-16 rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl transition-all"
                         >
                             {{ deleteError ? 'ยืนยันลบทั้งหมด' : 'ใช่, ลบเลย' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Table Confirmation Modal -->
+        <div v-if="showDeleteTableConfirm" class="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xl animate-in fade-in duration-300" @click="showDeleteTableConfirm = false"></div>
+            <div class="bg-white w-full max-w-lg rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 p-10">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-20 h-20 bg-red-50 rounded-[32px] flex items-center justify-center text-red-500 mb-6 shadow-xl shadow-red-100/50">
+                        <Trash2 class="w-8 h-8" />
+                    </div>
+                    
+                    <h3 class="text-2xl font-black text-slate-800 tracking-tighter uppercase italic mb-2">ยืนยันการลบโต๊ะ</h3>
+                    <p class="text-slate-500 font-bold text-sm leading-relaxed mb-8">
+                        คุณแน่ใจหรือไม่ว่าต้องการลบโต๊ะที่ <span class="text-slate-900 font-black">"{{ tableToDelete?.number }}"</span>? ข้อมูลโต๊ะนี้จะถูกลบออกจากระบบอย่างถาวร
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4 w-full">
+                        <button @click="showDeleteTableConfirm = false" class="btn-secondary h-16 rounded-3xl font-black uppercase tracking-widest text-xs">ยกเลิก</button>
+                        <button 
+                            @click="confirmDeleteTable" 
+                            class="bg-red-600 hover:bg-red-700 text-white h-16 rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl transition-all"
+                        >
+                            ใช่, ลบโต๊ะเลย
                         </button>
                     </div>
                 </div>
