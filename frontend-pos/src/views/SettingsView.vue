@@ -10,7 +10,10 @@ import {
   Trash2, 
   Plus, 
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Bell,
+  Check,
+  Info
 } from 'lucide-vue-next';
 import api from '../api';
 import { usePosStore } from '../stores/pos';
@@ -36,11 +39,16 @@ onMounted(() => {
     fetchData();
 });
 
+const notification = ref({ show: false, message: '', type: 'error' });
+const showNotification = (msg: string, type: 'success' | 'error' | 'warning' = 'error') => {
+    notification.value = { show: true, message: msg, type };
+};
+
 // Zone & Table Forms
 const zoneName = ref('');
 const addZone = async () => {
     if (!zoneName.value) {
-        alert('กรุณาใส่ชื่อโซน');
+        showNotification('กรุณาใส่ชื่อโซน', 'warning');
         return;
     }
     try {
@@ -51,7 +59,7 @@ const addZone = async () => {
         await fetchData();
     } catch (err: any) {
         console.error('Failed to create zone:', err);
-        alert('ไม่สามารถสร้างโซนได้: ' + (err?.response?.data?.error || err.message));
+        showNotification('ไม่สามารถสร้างโซนได้: ' + (err?.response?.data?.error || err.message), 'error');
     }
 };
 
@@ -59,7 +67,7 @@ const tableName = ref('');
 const tableZoneId = ref('');
 const addTable = async () => {
     if (!tableName.value || !tableZoneId.value) {
-        alert('กรุณาใส่หมายเลขโต๊ะและเลือกโซน');
+        showNotification('กรุณาใส่หมายเลขโต๊ะและเลือกโซน', 'warning');
         return;
     }
     try {
@@ -70,7 +78,7 @@ const addTable = async () => {
         await fetchData();
     } catch (err: any) {
         console.error('Failed to create table:', err);
-        alert('ไม่สามารถสร้างโต๊ะได้: ' + (err?.response?.data?.error || err.message));
+        showNotification('ไม่สามารถสร้างโต๊ะได้: ' + (err?.response?.data?.error || err.message), 'error');
     }
 };
 
@@ -241,6 +249,32 @@ const selectTab = (tab: any) => activeTab.value = tab;
         </div>
       </main>
     </div>
+
+    <!-- Premium Notification Modal -->
+    <Teleport to="body">
+        <div v-if="notification.show" class="fixed inset-0 z-[200] flex items-center justify-center p-6 text-slate-900">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" @click="notification.show = false"></div>
+            <div class="bg-white w-full max-w-md rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 p-10 flex flex-col items-center text-center">
+                <div :class="[
+                    'w-20 h-20 rounded-[32px] flex items-center justify-center mb-6 shadow-xl',
+                    notification.type === 'error' ? 'bg-red-50 text-red-500 shadow-red-100/50' : 
+                    notification.type === 'success' ? 'bg-emerald-50 text-emerald-500 shadow-emerald-100/50' : 
+                    'bg-amber-50 text-amber-500 shadow-amber-100/50'
+                ]">
+                    <component :is="notification.type === 'success' ? Check : (notification.type === 'error' ? Bell : Info)" class="w-10 h-10" />
+                </div>
+                <h3 class="text-xl font-black text-slate-800 tracking-tighter uppercase italic mb-2">
+                    {{ notification.type === 'error' ? 'เกิดข้อผิดพลาด' : notification.type === 'success' ? 'สำเร็จ' : 'แจ้งเตือน' }}
+                </h3>
+                <p class="text-slate-500 font-bold text-sm leading-relaxed mb-8">
+                    {{ notification.message }}
+                </p>
+                <button @click="notification.show = false" class="w-full h-16 bg-slate-900 hover:bg-black text-white rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">
+                    ตกลง
+                </button>
+            </div>
+        </div>
+    </Teleport>
   </div>
 </template>
 

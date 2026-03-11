@@ -4,7 +4,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X, Users, Sparkles, Minus, Plus } from "lucide-vue-next";
+import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X, Users, Sparkles, Minus, Plus, Bell, Info, Check } from "lucide-vue-next";
 import QrcodeVue from "qrcode.vue";
 import { usePosStore } from "../stores/pos";
 import CheckoutModal from "../components/CheckoutModal.vue";
@@ -50,6 +50,16 @@ watch(() => store.tiers, (newTiers) => {
   }
 }, { immediate: true });
 
+const showNotification = (msg: string, type: 'success' | 'error' | 'warning' = 'error') => {
+    notification.value = { show: true, message: msg, type };
+};
+const notification = ref({ show: false, message: '', type: 'error' });
+
+const confirmModal = ref({ show: false, title: '', message: '', onConfirm: () => {} });
+const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    confirmModal.value = { show: true, title, message, onConfirm };
+};
+
 const openTable = async () => {
   if (activeTable.value) {
     try {
@@ -58,7 +68,7 @@ const openTable = async () => {
       }
       await store.openTable(activeTable.value.id, pax.value, selectedTierId.value || undefined);
     } catch (err: any) {
-      alert("ไม่สามารถเปิดโต๊ะได้: " + err);
+      showNotification("ไม่สามารถเปิดโต๊ะได้: " + err, 'error');
     }
   }
 };
@@ -88,7 +98,7 @@ const copyOrderLink = () => {
   if (activeTable.value?.sessionId) {
     const link = `${frontendCustomerUrl}/table/${activeTable.value.sessionId}`;
     navigator.clipboard.writeText(link);
-    alert("Order link copied to clipboard!");
+    showNotification("Order link copied to clipboard!", 'success');
   }
 };
 
@@ -166,8 +176,9 @@ const confirmMoveTable = async () => {
         await store.moveTable(activeTable.value.sessionId, selectedMoveTableId.value);
         showMoveModal.value = false;
         setActiveTable(selectedMoveTableId.value); // Set active to new table
+        showNotification("ย้ายโต๊ะสำเร็จ", 'success');
     } catch (err) {
-        alert("Failed to move table");
+        showNotification("Failed to move table", 'error');
     }
 };
 
@@ -178,16 +189,22 @@ const confirmMergeTable = async () => {
         showMergeModal.value = false;
         const targetTable = store.tables.find(t => t.sessionId === selectedMergeSessionId.value);
         if (targetTable) setActiveTable(targetTable.id);
+        showNotification("รวมโต๊ะสำเร็จ", 'success');
     } catch (err) {
-        alert("Failed to merge tables");
+        showNotification("Failed to merge tables", 'error');
     }
 };
 
 const cleanTable = async () => {
   if (activeTable.value && activeTable.value.status === 'CLEANING') {
-    if (confirm(`ยืนยันการทำความสะอาดโต๊ะ ${activeTable.value.number} เสร็จสิ้น?`)) {
-      await store.markTableCleaned(activeTable.value.id);
-    }
+    showConfirm(
+      'ยืนยันการทำความสะอาด',
+      `ยืนยันการทำความสะอาดโต๊ะ ${activeTable.value.number} เสร็จสิ้นหรือไม่?`,
+      async () => {
+        await store.markTableCleaned(activeTable.value!.id);
+        showNotification("ทำความสะอาดเสร็จสิ้น", 'success');
+      }
+    );
   }
 };
 </script>
@@ -427,6 +444,41 @@ const cleanTable = async () => {
   </div>
 
   <CheckoutModal v-model="showCheckoutModal" :table="activeTable" @checkout-success="handleCheckoutSuccess" />
+  
+  <div v-if="confirmModal.show" class="fixed inset-0 z-[100] flex items-center justify-center p-6 text-slate-900">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" @click="confirmModal.show = false"></div>
+    <div class="bg-white w-full max-w-md rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 p-10 flex flex-col items-center text-center">
+      <div class="w-20 h-20 bg-indigo-50 text-indigo-500 rounded-[32px] flex items-center justify-center mb-6 shadow-xl shadow-indigo-100/50">
+        <Sparkles class="w-10 h-10" />
+      </div>
+      <h3 class="text-2xl font-black text-slate-800 tracking-tighter uppercase italic mb-2">{{ confirmModal.title }}</h3>
+      <p class="text-slate-500 font-bold text-sm leading-relaxed mb-8">{{ confirmModal.message }}</p>
+      <div class="grid grid-cols-2 gap-4 w-full">
+        <button @click="confirmModal.show = false" class="h-16 bg-slate-100 text-slate-500 rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">ยกเลิก</button>
+        <button @click="confirmModal.onConfirm(); confirmModal.show = false" class="h-16 bg-indigo-600 text-white rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl hover:bg-indigo-700 transition-all">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="notification.show" class="fixed inset-0 z-[200] flex items-center justify-center p-6 text-slate-900">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" @click="notification.show = false"></div>
+    <div class="bg-white w-full max-w-md rounded-[40px] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 p-10 flex flex-col items-center text-center">
+      <div :class="[
+        'w-20 h-20 rounded-[32px] flex items-center justify-center mb-6 shadow-xl',
+        notification.type === 'error' ? 'bg-red-50 text-red-500 shadow-red-100/50' : 
+        notification.type === 'success' ? 'bg-emerald-50 text-emerald-500 shadow-emerald-100/50' : 
+        'bg-amber-50 text-amber-500 shadow-amber-100/50'
+      ]">
+        <component :is="notification.type === 'success' ? Check : (notification.type === 'error' ? Bell : Info)" class="w-10 h-10" />
+      </div>
+      <h3 class="text-xl font-black text-slate-800 tracking-tighter uppercase italic mb-2">
+        {{ notification.type === 'error' ? 'เกิดข้อผิดพลาด' : notification.type === 'success' ? 'สำเร็จ' : 'แจ้งเตือน' }}
+      </h3>
+      <p class="text-slate-500 font-bold text-sm leading-relaxed mb-8">{{ notification.message }}</p>
+      <button @click="notification.show = false" class="w-full h-16 bg-slate-900 hover:bg-black text-white rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl transition-all">ตกลง</button>
+    </div>
+  </div>
+
   <div v-if="isPrinting" class="hidden print:block print:fixed print:inset-0 print:bg-white print:z-[9999]">
     <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-white" v-if="activeTable">
       <h1 class="text-6xl font-black mb-4">TABLE {{ activeTable?.number }}</h1>
