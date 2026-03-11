@@ -214,21 +214,14 @@ const openItemDetails = (item: any) => {
                 </div>
             </div>
 
-            <!-- Floating Action Buttons -->
-            <div class="px-6 mb-12 flex space-x-4">
+            <!-- Floating Action Button -->
+            <div class="px-6 mb-12">
                 <button 
                     @click="showHistory = true"
-                    class="flex-1 p-6 bg-white rounded-[2rem] border border-slate-100 flex flex-col items-center justify-center text-center transition-all active:scale-95 shadow-[0_15px_35px_rgba(0,0,0,0.05)] hover:shadow-xl group"
+                    class="w-full p-6 bg-white rounded-[2rem] border border-slate-100 flex flex-col items-center justify-center text-center transition-all active:scale-95 shadow-[0_15px_35px_rgba(0,0,0,0.05)] hover:shadow-xl group"
                 >
                     <UtensilsCrossed class="w-8 h-8 text-slate-400 mb-3 group-hover:text-slate-800 transition-colors" />
                     <p class="text-[10px] font-black text-slate-400 group-hover:text-slate-800 uppercase tracking-widest transition-colors">{{ t('customerApp.orderDetails') }}</p>
-                </button>
-                <button 
-                    @click="callStaff"
-                    class="flex-1 p-6 bg-white rounded-[2rem] border border-slate-100 flex flex-col items-center justify-center text-center transition-all active:scale-95 shadow-[0_15px_35px_rgba(0,0,0,0.05)] hover:shadow-xl group"
-                >
-                    <Bell class="w-8 h-8 text-slate-400 mb-3 group-hover:text-amber-500 transition-colors" />
-                    <p class="text-[10px] font-black text-slate-400 group-hover:text-amber-500 uppercase tracking-widest transition-colors">{{ t('customerApp.callStaff') }}</p>
                 </button>
             </div>
 
@@ -328,7 +321,7 @@ const openItemDetails = (item: any) => {
                                 </div>
                                 <div class="flex-1 text-slate-900">
                                     <h4 class="font-serif text-xl italic mb-4">
-                                        {{ locale === 'th' ? (item.nameTh || item.name) : item.name }}
+                                        {{ locale === 'th' ? ((item as any).nameTh || item.name) : item.name }}
                                     </h4>
                                     <!-- Premium Nested Quantity Controls -->
                                     <div class="flex items-center space-x-4 bg-white w-fit rounded-full p-1.5 border border-slate-100 shadow-sm">
@@ -387,7 +380,7 @@ const openItemDetails = (item: any) => {
                             <div v-else class="space-y-8">
                                 <div v-for="(order, index) in store.session.orders" :key="order.id" class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
                                     <div class="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
-                                        <span class="text-sm font-black text-slate-900 uppercase tracking-widest">Order #{{ store.session.orders.length - index }}</span>
+                                        <span class="text-sm font-black text-slate-900 uppercase tracking-widest">Order #{{ (store.session.orders.length as number) - index }}</span>
                                         <span class="text-xs font-bold px-3 py-1 rounded-full" 
                                             :class="{
                                                 'bg-amber-100 text-amber-700': order.status === 'PENDING',
