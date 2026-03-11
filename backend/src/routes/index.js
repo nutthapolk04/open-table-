@@ -3,6 +3,10 @@ const router = express.Router();
 const zoneController = require('../controllers/zoneController');
 const menuController = require('../controllers/menuController');
 const sessionController = require('../controllers/sessionController');
+const debugController = require('../controllers/debugController');
+
+// Debug/Admin Routes
+router.post('/debug/seed', debugController.runSeed);
 
 // Zone & Table Routes
 router.get('/zones', zoneController.getZones);
