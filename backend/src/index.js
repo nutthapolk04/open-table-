@@ -93,6 +93,7 @@ async function autoSeed() {
         const catMeat = await prisma.category.create({ data: { name: 'Meats' } });
         const catVeg = await prisma.category.create({ data: { name: 'Vegetables' } });
         const catDrink = await prisma.category.create({ data: { name: 'Drinks' } });
+        const catAddon = await prisma.category.create({ data: { name: 'Add-ons' } });
 
         // Create Buffet Tiers
         const tierStandard = await prisma.buffetTier.create({
@@ -102,12 +103,14 @@ async function autoSeed() {
             data: { name: 'Premium', price: 499, duration: 120, description: 'Premium selection' }
         });
 
+        const baseUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+
         // Create Menus
         await prisma.menu.create({
             data: {
                 name: 'Wagyu Beef Wellington', nameTh: 'วากิวบีฟเวลลิงตัน',
                 description: 'Succulent Wagyu beef wrapped in mushroom duxelles and puff pastry.',
-                image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop',
+                image: `${baseUrl}/public/images/wagyu.png`,
                 categoryId: catMeat.id,
                 buffetTiers: { connect: [{ id: tierPremium.id }] }
             }
@@ -115,35 +118,17 @@ async function autoSeed() {
         await prisma.menu.create({
             data: {
                 name: 'Crispy Pork Belly', nameTh: 'หมูกรอบสไตล์กูร์เมต์',
-                description: 'Double-cooked pork belly with a honey balsamic glaze.',
-                image: 'https://images.unsplash.com/photo-1606471191009-63994c53433b?q=80&w=800&auto=format&fit=crop',
+                description: 'Double-cooked pork belly with a crunchy skin and honey balsamic glaze.',
+                image: `${baseUrl}/public/images/pork_belly.png`,
                 categoryId: catMeat.id,
                 buffetTiers: { connect: [{ id: tierStandard.id }, { id: tierPremium.id }] }
-            }
-        });
-        await prisma.menu.create({
-            data: {
-                name: 'Premium Beef Sirloin', nameTh: 'เนื้อสันนอกพรีเมียม',
-                description: 'Prime cut beef sirloin grilled to perfection.',
-                image: 'https://images.unsplash.com/photo-1558030006-450675393462?q=80&w=800&auto=format&fit=crop',
-                categoryId: catMeat.id,
-                buffetTiers: { connect: [{ id: tierPremium.id }] }
             }
         });
         await prisma.menu.create({
             data: {
                 name: 'Garden Fresh Medley', nameTh: 'เมนูผักสวนรักธรรมชาติ',
                 description: 'Seasonal organic vegetables from local farms.',
-                image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=800&auto=format&fit=crop',
-                categoryId: catVeg.id,
-                buffetTiers: { connect: [{ id: tierStandard.id }, { id: tierPremium.id }] }
-            }
-        });
-        await prisma.menu.create({
-            data: {
-                name: 'Grilled Asparagus', nameTh: 'หน่อไม้ฝรั่งย่าง',
-                description: 'Fresh asparagus with garlic butter and parmesan.',
-                image: 'https://images.unsplash.com/photo-1515516969-d4008cc6241a?q=80&w=800&auto=format&fit=crop',
+                image: `${baseUrl}/public/images/salad.png`,
                 categoryId: catVeg.id,
                 buffetTiers: { connect: [{ id: tierStandard.id }, { id: tierPremium.id }] }
             }
@@ -152,24 +137,32 @@ async function autoSeed() {
             data: {
                 name: 'Fine Mineral Water', nameTh: 'น้ำแร่ธรรมชาติ',
                 description: 'Naturally filtered volcanic mineral water.',
-                image: 'https://images.unsplash.com/photo-1560023907-5f339617ea30?q=80&w=800&auto=format&fit=crop',
-                price: 20, categoryId: catDrink.id
+                image: `${baseUrl}/public/images/water.png`,
+                price: 20, 
+                categoryId: catDrink.id
             }
         });
+
+        // Add-ons
         await prisma.menu.create({
             data: {
-                name: 'Thai Iced Tea', nameTh: 'ชาไทยเย็น',
-                description: 'Classic Thai iced tea with condensed milk.',
-                image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=800&auto=format&fit=crop',
-                price: 45, categoryId: catDrink.id
+                name: 'Extra Truffle Sauce', nameTh: 'ซอสทรัฟเฟิลพิเศษ',
+                description: 'Rich and aromatic black truffle dipping sauce.',
+                image: `${baseUrl}/public/images/truffle_sauce.png`,
+                price: 59,
+                categoryId: catAddon.id,
+                buffetTiers: { connect: [{ id: tierPremium.id }] }
             }
         });
+
         await prisma.menu.create({
             data: {
-                name: 'Fresh Coconut Water', nameTh: 'น้ำมะพร้าวสด',
-                description: 'Chilled fresh young coconut water.',
-                image: 'https://images.unsplash.com/photo-1525385133512-2f3bdd585a94?q=80&w=800&auto=format&fit=crop',
-                price: 35, categoryId: catDrink.id
+                name: 'Soft Boiled Egg', nameTh: 'ไข่ต้มยางมะตูม',
+                description: 'Perfectly cooked soft boiled egg.',
+                image: '🥚',
+                price: 15,
+                categoryId: catAddon.id,
+                buffetTiers: { connect: [{ id: tierStandard.id }, { id: tierPremium.id }] }
             }
         });
 

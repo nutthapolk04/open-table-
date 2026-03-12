@@ -22,6 +22,11 @@ exports.runSeed = async (req, res) => {
             update: {},
             create: { id: 'cat-drink', name: 'Drinks' }
         });
+        const catAddon = await prisma.category.upsert({
+            where: { id: 'cat-addon' },
+            update: {},
+            create: { id: 'cat-addon', name: 'Add-ons' }
+        });
 
         // Create Tiers
         const tierStandard = await prisma.buffetTier.upsert({
@@ -29,46 +34,80 @@ exports.runSeed = async (req, res) => {
             update: {},
             create: { id: 'tier-std', name: 'Standard', price: 299, duration: 90 }
         });
+        const tierPremium = await prisma.buffetTier.upsert({
+            where: { id: 'tier-prem' },
+            update: {},
+            create: { id: 'tier-prem', name: 'Premium', price: 499, duration: 120 }
+        });
+
+        const baseUrl = process.env.BACKEND_URL || 'http://localhost:3000';
 
         // Create Menus
         await prisma.menu.upsert({
             where: { id: 'menu-1' },
-            update: {},
+            update: { image: `${baseUrl}/public/images/wagyu.png` },
             create: {
                 id: 'menu-1',
                 name: 'Wagyu Beef Wellington',
                 nameTh: 'วากิวบีฟเวลลิงตัน',
                 price: 0,
                 categoryId: catMeat.id,
-                image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop',
-                buffetTiers: { connect: [{ id: tierStandard.id }] }
+                image: `${baseUrl}/public/images/wagyu.png`,
+                buffetTiers: { connect: [{ id: tierPremium.id }] }
             }
         });
 
         await prisma.menu.upsert({
             where: { id: 'menu-2' },
-            update: {},
+            update: { image: `${baseUrl}/public/images/pork_belly.png` },
             create: {
                 id: 'menu-2',
                 name: 'Crispy Pork Belly',
                 nameTh: 'หมูกรอบสไตล์กูร์เมต์',
                 price: 0,
                 categoryId: catMeat.id,
-                image: 'https://images.unsplash.com/photo-1606471191009-63994c53433b?q=80&w=800&auto=format&fit=crop',
-                buffetTiers: { connect: [{ id: tierStandard.id }] }
+                image: `${baseUrl}/public/images/pork_belly.png`,
+                buffetTiers: { connect: [{ id: tierStandard.id }, { id: tierPremium.id }] }
             }
         });
 
         await prisma.menu.upsert({
             where: { id: 'menu-3' },
-            update: {},
+            update: { image: `${baseUrl}/public/images/water.png` },
             create: {
                 id: 'menu-3',
                 name: 'Mineral Water',
                 nameTh: 'น้ำแร่',
                 price: 20,
                 categoryId: catDrink.id,
-                image: 'https://images.unsplash.com/photo-1560023907-5f339617ea30?q=80&w=800&auto=format&fit=crop'
+                image: `${baseUrl}/public/images/water.png`
+            }
+        });
+
+        await prisma.menu.upsert({
+            where: { id: 'menu-4' },
+            update: { image: `${baseUrl}/public/images/salad.png` },
+            create: {
+                id: 'menu-4',
+                name: 'Garden Fresh Medley',
+                nameTh: 'ผักสวนรักธรรมชาติ',
+                price: 0,
+                categoryId: catVeg.id,
+                image: `${baseUrl}/public/images/salad.png`,
+                buffetTiers: { connect: [{ id: tierStandard.id }, { id: tierPremium.id }] }
+            }
+        });
+
+        await prisma.menu.upsert({
+            where: { id: 'menu-5' },
+            update: { image: `${baseUrl}/public/images/truffle_sauce.png` },
+            create: {
+                id: 'menu-5',
+                name: 'Extra Truffle Sauce',
+                nameTh: 'ซอสทรัฟเฟิลพิเศษ',
+                price: 59,
+                categoryId: catAddon.id,
+                image: `${baseUrl}/public/images/truffle_sauce.png`
             }
         });
 
