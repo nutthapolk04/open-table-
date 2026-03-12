@@ -333,11 +333,7 @@ onMounted(fetchData);
                             <button @click="toggleZoneStatus(zone)" :class="['text-[10px] font-bold uppercase tracking-widest flex items-center px-2 py-0.5 rounded-full transition-colors', zone.isActive ? 'text-rose-500 bg-rose-50' : 'text-emerald-500 bg-emerald-50']">
                                 {{ zone.isActive ? 'ปิดโซน' : 'เปิดโซน' }}
                             </button>
-                            <div class="h-3 w-px bg-slate-200 mx-1"></div>
-                            <button @click="handlePrintAll(zone, 'session')" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center bg-slate-50 px-2 py-0.5 rounded-full transition-colors mr-1">
-                                <Printer class="w-3 h-3 mr-1" />
-                                ปริ้น QR (Session)
-                            </button>
+
                             <button @click="handlePrintAll(zone, 'permanent')" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center bg-slate-50 px-2 py-0.5 rounded-full transition-colors">
                                 <QrCode class="w-3 h-3 mr-1" />
                                 ปริ้น QR ติดโต๊ะ
