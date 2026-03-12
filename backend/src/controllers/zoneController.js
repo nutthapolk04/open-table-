@@ -10,7 +10,8 @@ exports.getZones = async (req, res) => {
                         }
                     }
                 }
-            }
+            },
+            orderBy: { createdAt: 'asc' }
         });
         res.json(zones);
     } catch (error) {
@@ -58,7 +59,11 @@ exports.getTables = async (req, res) => {
                         }
                     }
                 }
-            }
+            },
+            orderBy: [
+                { zone: { createdAt: 'asc' } },
+                { number: 'asc' }
+            ]
         });
         res.json(tables);
     } catch (error) {
@@ -120,15 +125,22 @@ exports.deleteZone = async (req, res) => {
 
         if (!zone) return res.status(404).json({ error: 'Zone not found' });
 
+        // RESTRICTION: Cannot delete zone if any table is occupied or cleaning
+        if (zone.tables.some(t => t.status !== 'FREE')) {
+            return res.status(400).json({ 
+                error: 'Cannot delete zone because some tables are currently occupied or being cleaned.' 
+            });
+        }
+
         if (zone.tables.length > 0 && force !== 'true') {
             return res.status(400).json({
-                error: 'Zone has tables. Use force=true to delete all tables and the zone.',
+                error: 'Zone has tables. Use force=true to delete all empty tables and the zone.',
                 hasTables: true
             });
         }
 
         if (force === 'true') {
-            // Delete all tables in zone first
+            // Delete all tables in zone first (already checked they are FREE)
             await prisma.table.deleteMany({ where: { zoneId: id } });
         }
 
@@ -142,11 +154,14 @@ exports.deleteZone = async (req, res) => {
 exports.updateZone = async (req, res) => {
     const prisma = req.app.get('prisma');
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, isActive } = req.body;
     try {
         const zone = await prisma.zone.update({
             where: { id },
-            data: { name }
+            data: { 
+                name: name || undefined,
+                isActive: isActive !== undefined ? isActive : undefined
+            }
         });
         res.json(zone);
     } catch (error) {

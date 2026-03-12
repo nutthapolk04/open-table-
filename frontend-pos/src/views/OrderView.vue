@@ -207,20 +207,7 @@ const handleStatusUpdate = async (orderId: string, currentStatus: string) => {
 
         <div class="h-6 w-px bg-slate-200"></div>
 
-        <div class="flex items-center space-x-4">
-           <div class="flex items-center space-x-2">
-             <div class="w-8 h-4 bg-indigo-600 rounded-full relative">
-               <div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-             </div>
-             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Open Menu</span>
-           </div>
-           <div class="flex items-center space-x-2">
-             <div class="w-8 h-4 bg-slate-200 rounded-full relative">
-               <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-             </div>
-             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Print Receipt</span>
-           </div>
-        </div>
+
       </div>
 
       <div class="flex items-center space-x-3">

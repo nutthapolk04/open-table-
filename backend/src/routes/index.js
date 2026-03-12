@@ -4,6 +4,7 @@ const zoneController = require('../controllers/zoneController');
 const menuController = require('../controllers/menuController');
 const sessionController = require('../controllers/sessionController');
 const debugController = require('../controllers/debugController');
+const qrController = require('../controllers/qrController');
 
 // Debug/Admin Routes
 router.post('/debug/seed', debugController.runSeed);
@@ -35,6 +36,8 @@ router.post('/orders/void', sessionController.voidOrderItem);
 router.patch('/orders/status', sessionController.updateOrderStatus);
 router.post('/sessions/move', sessionController.moveSession);
 router.post('/sessions/merge', sessionController.mergeSessions);
+router.get('/tables/:tableId/session/active', sessionController.getActiveSessionByTable);
+router.get('/tables/:id/qr-image', qrController.generateTableQR);
 
 router.get('/tiers/:id/menu', menuController.getTierMenu);
 

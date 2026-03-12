@@ -87,14 +87,7 @@ const handleSync = () => {
            </div>
         </div>
 
-        <div class="flex items-center space-x-4">
-           <div class="flex items-center bg-slate-50 rounded-xl border border-slate-200 p-1">
-             <button @click="handleSync" :disabled="store.loading" class="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest flex items-center space-x-2 transition-all" :class="store.loading ? 'text-slate-400' : 'text-slate-600 hover:bg-white hover:shadow-sm'">
-                <RotateCw class="w-3 h-3" :class="{ 'animate-spin': store.loading }" />
-                <span>{{ store.loading ? 'Syncing...' : 'Sync Data' }}</span>
-             </button>
-           </div>
-        </div>
+
       </header>
 
       <main class="flex-1 overflow-hidden">

@@ -4,7 +4,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X, Users, Sparkles, Minus, Plus, Bell, Info, Check } from "lucide-vue-next";
+import { Monitor, UserPlus, Receipt, Share2, Printer, QrCode, ArrowRightLeft, GitMerge, X, Users, Sparkles, Minus, Plus, Bell, Info, Check, Library } from "lucide-vue-next";
 import QrcodeVue from "qrcode.vue";
 import { usePosStore } from "../stores/pos";
 import CheckoutModal from "../components/CheckoutModal.vue";
@@ -105,9 +105,11 @@ const copyOrderLink = () => {
 
 const tablesByZoneAll = computed(() => {
   const groups: Record<string, any[]> = {};
-  store.tables.forEach(table => {
-    if (!groups[table.zone]) groups[table.zone] = [];
-    groups[table.zone].push(table);
+  store.zones.forEach(zone => {
+    const zoneTables = store.tables.filter(t => t.zone === zone.name);
+    if (zoneTables.length > 0) {
+      groups[zone.name] = zoneTables;
+    }
   });
   return groups;
 });
@@ -122,11 +124,17 @@ const orderTotal = computed(() => {
 
 const tablesByZone = computed(() => {
   const groups: Record<string, any[]> = {};
-  store.tables.forEach(table => {
-    if (selectedZone.value && table.zone !== selectedZone.value) return;
-    if (!groups[table.zone]) groups[table.zone] = [];
-    groups[table.zone].push(table);
+  
+  // Use store.zones to maintain the creation order from backend
+  store.zones.forEach(zone => {
+    if (selectedZone.value && zone.name !== selectedZone.value) return;
+    
+    const zoneTables = store.tables.filter(t => t.zone === zone.name);
+    if (zoneTables.length > 0) {
+      groups[zone.name] = zoneTables;
+    }
   });
+
   return groups;
 });
 
@@ -156,6 +164,8 @@ const showMoveModal = ref(false);
 const showMergeModal = ref(false);
 const selectedMoveTableId = ref("");
 const selectedMergeSessionId = ref("");
+const showMergeBillModal = ref(false);
+const selectedMergeBillSessionId = ref("");
 
 const availableToMove = computed(() => store.tables.filter(t => t.status === 'FREE' || t.status === 'CLEANING'));
 const availableToMerge = computed(() => store.tables.filter(t => (t.status === 'OCCUPIED' || t.status === 'CHECKING_BILL') && t.sessionId !== activeTable.value?.sessionId && t.sessionId != null));
@@ -168,6 +178,11 @@ const handleMoveTableClick = () => {
 const handleMergeTableClick = () => {
     selectedMergeSessionId.value = "";
     showMergeModal.value = true;
+};
+
+const handleMergeBillClick = () => {
+    selectedMergeBillSessionId.value = "";
+    showMergeBillModal.value = true;
 };
 
 const confirmMoveTable = async () => {
@@ -192,6 +207,19 @@ const confirmMergeTable = async () => {
         showNotification("รวมโต๊ะสำเร็จ", 'success');
     } catch (err) {
         showNotification("Failed to merge tables", 'error');
+    }
+};
+
+const confirmMergeBill = async () => {
+    if (!activeTable.value?.sessionId || !selectedMergeBillSessionId.value) return;
+    try {
+        await store.mergeTables(activeTable.value.sessionId, selectedMergeBillSessionId.value);
+        showMergeBillModal.value = false;
+        const targetTable = store.tables.find(t => t.sessionId === selectedMergeBillSessionId.value);
+        if (targetTable) setActiveTable(targetTable.id);
+        showNotification("รวมบิลสำเร็จ", 'success');
+    } catch (err) {
+        showNotification("Failed to merge bills", 'error');
     }
 };
 
@@ -365,7 +393,7 @@ const cleanTable = async () => {
               </button>
               <p class="text-[10px] text-indigo-400 mt-2 text-center opacity-70">{{ t("posModule.checkout.printQrSub") }}</p>
             </div>
-            <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="grid grid-cols-2 gap-3 mb-3">
               <button @click="handleMoveTableClick" class="flex items-center justify-center p-3 text-sm font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-xl transition-all shadow-sm active:scale-95 space-x-2">
                 <ArrowRightLeft class="w-4 h-4" />
                 <span>{{ t('posModule.moveTable') }}</span>
@@ -375,6 +403,10 @@ const cleanTable = async () => {
                 <span>{{ t('posModule.mergeTable') }}</span>
               </button>
             </div>
+            <button @click="handleMergeBillClick" class="w-full flex items-center justify-center p-3 text-sm font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 rounded-xl transition-all shadow-sm active:scale-95 space-x-2 mb-4">
+              <Library class="w-4 h-4" />
+              <span>รวมบิล</span>
+            </button>
             <div class="p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
               <div class="flex justify-between items-center mb-4">
                 <span class="text-sm font-medium text-indigo-700">{{ t("posModule.orderSummary") }}</span>
@@ -439,6 +471,27 @@ const cleanTable = async () => {
         <div class="flex space-x-3">
             <button @click="showMergeModal = false" class="flex-1 py-3 px-4 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">{{ t('posModule.checkout.cancel') }}</button>
             <button @click="confirmMergeTable" :disabled="!selectedMergeSessionId" class="flex-1 py-3 px-4 rounded-xl font-bold bg-teal-600 text-white shadow-lg shadow-teal-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-teal-700 transition-colors active:scale-95">{{ t('posModule.mergeTable') }}</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- Merge Bill Modal -->
+  <div v-if="showMergeBillModal" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showMergeBillModal = false"></div>
+    <div class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 p-8">
+        <h3 class="text-xl font-black text-slate-800 tracking-tight mb-2">รวมบิลเข้ากับโต๊ะอื่น</h3>
+        <p class="text-sm text-slate-500 mb-6">เลือกโต๊ะหลักที่ต้องการโอนรายการอาหารไปรวม</p>
+        
+        <div class="space-y-4 mb-8">
+            <select v-model="selectedMergeBillSessionId" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="" disabled>เลือกโต๊ะปลายทาง...</option>
+                <option v-for="tbl in availableToMerge" :key="tbl.id" :value="tbl.sessionId">{{ t('posModule.table') }} {{ tbl.number }} ({{ tbl.zone }})</option>
+            </select>
+        </div>
+
+        <div class="flex space-x-3">
+            <button @click="showMergeBillModal = false" class="flex-1 py-3 px-4 rounded-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">{{ t('posModule.checkout.cancel') }}</button>
+            <button @click="confirmMergeBill" :disabled="!selectedMergeBillSessionId" class="flex-1 py-3 px-4 rounded-xl font-bold bg-purple-600 text-white shadow-lg shadow-purple-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors active:scale-95">ยืนยันรวมบิล</button>
         </div>
     </div>
   </div>

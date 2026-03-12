@@ -7,6 +7,11 @@ const routes = [
         name: 'order',
         component: () => import('./views/OrderView.vue')
     },
+    {
+        path: '/table/fixed/:tableId',
+        name: 'fixed-table',
+        component: () => import('./views/FixedTableRedirect.vue')
+    },
     // Catch-all to prevent blank screen
     { path: '/:pathMatch(.*)*', redirect: '/table/demo' }
 ]

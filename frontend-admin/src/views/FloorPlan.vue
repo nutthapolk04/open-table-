@@ -59,7 +59,21 @@ const openTableForm = ref({ customerCount: 2, tierId: '' });
 
 const frontendCustomerUrl = import.meta.env.VITE_CUSTOMER_FRONTEND_URL || "http://localhost:5174";
 const printingMode = ref<'single' | 'zone'>('single');
+const printingType = ref<'session' | 'permanent'>('session');
 const printingZone = ref<any>(null);
+const backendUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api").replace('/api', '');
+
+const toggleZoneStatus = async (zone: any) => {
+    try {
+        await api.patch(`/zones/${zone.id}`, {
+            isActive: !zone.isActive
+        });
+        showNotification(`${!zone.isActive ? 'เปิด' : 'ปิด'}บริการโซน ${zone.name} เรียบร้อย`, 'success');
+        fetchData();
+    } catch (e: any) {
+        showNotification('เกิดข้อผิดพลาดในการเปลี่ยนสถานะโซน', 'error');
+    }
+};
 
 const fetchData = async () => {
     loading.value = true;
@@ -213,12 +227,16 @@ const getTableStatusUI = (status: string) => {
     }
 };
 
-const handlePrint = () => {
+const handlePrint = (type: 'session' | 'permanent' = 'session') => {
+    printingType.value = type;
     printingMode.value = 'single';
-    window.print();
+    setTimeout(() => {
+        window.print();
+    }, 100);
 };
 
-const handlePrintAll = (zone: any) => {
+const handlePrintAll = (zone: any, type: 'session' | 'permanent' = 'session') => {
+    printingType.value = type;
     printingMode.value = 'zone';
     printingZone.value = zone;
     setTimeout(() => {
@@ -309,10 +327,20 @@ onMounted(fetchData);
                            </button>
                         </div>
                         <div class="flex items-center space-x-2 mt-1">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400 block px-2 py-0.5 bg-indigo-50 rounded-full w-fit">โซนที่เปิดให้บริการปกติ</span>
-                            <button @click="handlePrintAll(zone)" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center bg-slate-50 px-2 py-0.5 rounded-full transition-colors">
+                            <span :class="['text-[10px] font-black uppercase tracking-widest block px-2 py-0.5 rounded-full w-fit transition-colors', zone.isActive ? 'text-indigo-400 bg-indigo-50' : 'text-slate-400 bg-slate-100']">
+                                {{ zone.isActive ? 'โซนที่เปิดให้บริการปกติ' : 'โซนที่ปิดให้บริการชั่วคราว' }}
+                            </span>
+                            <button @click="toggleZoneStatus(zone)" :class="['text-[10px] font-bold uppercase tracking-widest flex items-center px-2 py-0.5 rounded-full transition-colors', zone.isActive ? 'text-rose-500 bg-rose-50' : 'text-emerald-500 bg-emerald-50']">
+                                {{ zone.isActive ? 'ปิดโซน' : 'เปิดโซน' }}
+                            </button>
+                            <div class="h-3 w-px bg-slate-200 mx-1"></div>
+                            <button @click="handlePrintAll(zone, 'session')" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center bg-slate-50 px-2 py-0.5 rounded-full transition-colors mr-1">
                                 <Printer class="w-3 h-3 mr-1" />
-                                ปริ้น QR ทั้งโซน
+                                ปริ้น QR (Session)
+                            </button>
+                            <button @click="handlePrintAll(zone, 'permanent')" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center bg-slate-50 px-2 py-0.5 rounded-full transition-colors">
+                                <QrCode class="w-3 h-3 mr-1" />
+                                ปริ้น QR ติดโต๊ะ
                             </button>
                         </div>
                     </div>
@@ -375,6 +403,12 @@ onMounted(fetchData);
                             class="w-8 h-8 bg-white border border-slate-200 rounded-full shadow-md flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:border-indigo-100 transition-all"
                         >
                             <Pencil class="w-3 h-3" />
+                        </button>
+                        <button @click="() => handlePrint('session')" class="w-7 h-7 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm" title="Print Session QR">
+                            <Printer class="w-3.5 h-3.5" />
+                        </button>
+                        <button @click="() => handlePrint('permanent')" class="w-7 h-7 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm" title="Print Fixed Table QR">
+                            <QrCode class="w-3.5 h-3.5" />
                         </button>
                         <button 
                             @click="handleDeleteTableClick(table)"
@@ -471,7 +505,7 @@ onMounted(fetchData);
                 <div class="bg-slate-50 rounded-[32px] p-8 mb-10 border border-slate-100 flex flex-col items-center">
                     <div v-if="selectedTableForQR?.sessions?.[0]" class="space-y-6">
                         <img 
-                            :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(frontendCustomerUrl + '/table/' + selectedTableForQR.sessions[0].id)}`" 
+                            :src="`${backendUrl}/api/tables/${selectedTableForQR.id}/qr-image?type=session`" 
                             class="w-48 h-48 rounded-lg shadow-sm mx-auto"
                             alt="QR Code"
                         />
@@ -501,7 +535,7 @@ onMounted(fetchData);
                     </a>
                     <button 
                         v-if="selectedTableForQR?.sessions?.[0]"
-                        @click="handlePrint" 
+                        @click="() => handlePrint('session')" 
                         class="flex items-center justify-center w-full py-4 text-xs font-black uppercase tracking-widest text-white bg-slate-900 rounded-2xl hover:bg-black transition-all shadow-lg"
                     >
                         <Printer class="w-4 h-4 mr-2" />
@@ -682,18 +716,18 @@ onMounted(fetchData);
     <Teleport to="body">
         <div class="print-area">
             <!-- Single Table Print -->
-            <div v-if="printingMode === 'single' && selectedTableForQR && selectedTableForQR.sessions?.[0]" class="receipt-container">
+            <div v-if="printingMode === 'single' && selectedTableForQR" class="receipt-container">
                 <div class="receipt-header">
                     <div class="receipt-logo">OT</div>
                     <p class="receipt-brand">OpenTable</p>
                     <div class="receipt-divider"></div>
                     <h2 class="receipt-table-num">โต๊ะ {{ selectedTableForQR.number }}</h2>
-                    <p class="receipt-welcome">ยินดีต้อนรับ / Welcome</p>
+                    <p class="receipt-welcome">{{ printingType === 'permanent' ? 'ติดโต๊ะถาวร' : 'ยินดีต้อนรับ / Welcome' }}</p>
                 </div>
 
                 <div class="receipt-qr-wrapper">
                     <img 
-                        :src="`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(frontendCustomerUrl + '/table/' + selectedTableForQR.sessions[0].id)}`" 
+                        :src="`${backendUrl}/api/tables/${selectedTableForQR.id}/qr-image?type=${printingType}`" 
                         class="receipt-qr-img"
                         alt="QR Code"
                     />
@@ -705,8 +739,8 @@ onMounted(fetchData);
                         <span class="receipt-instruction-en">Scan to start ordering</span>
                     </p>
                     <div class="receipt-session-info">
-                        <p class="receipt-session-label">Session ID</p>
-                        <p class="receipt-session-id">{{ selectedTableForQR.sessions[0].id }}</p>
+                        <p class="receipt-session-label">{{ printingType === 'permanent' ? 'Table ID' : 'Session ID' }}</p>
+                        <p class="receipt-session-id">{{ printingType === 'permanent' ? selectedTableForQR.id : (selectedTableForQR.sessions?.[0]?.id || 'NO ACTIVE SESSION') }}</p>
                     </div>
                     <p class="receipt-system-tag">Powered by OpenTable Systems</p>
                 </div>
@@ -715,18 +749,18 @@ onMounted(fetchData);
             <!-- Zone All Tables Print -->
             <div v-else-if="printingMode === 'zone' && printingZone" class="zone-print-wrapper">
                 <template v-for="table in printingZone.tables" :key="table.id">
-                    <div v-if="table.sessions?.[0]" class="receipt-container zone-receipt">
+                    <div v-if="printingType === 'permanent' || table.sessions?.[0]" class="receipt-container zone-receipt">
                         <div class="receipt-header">
                             <div class="receipt-logo">OT</div>
                             <p class="receipt-brand">OpenTable</p>
                             <div class="receipt-divider"></div>
                             <h2 class="receipt-table-num">โต๊ะ {{ table.number }}</h2>
-                            <p class="receipt-welcome">{{ printingZone.name }}</p>
+                            <p class="receipt-welcome">{{ printingType === 'permanent' ? 'ติดโต๊ะถาวร' : printingZone.name }}</p>
                         </div>
 
                         <div class="receipt-qr-wrapper">
                             <img 
-                                :src="`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(frontendCustomerUrl + '/table/' + table.sessions[0].id)}`" 
+                                :src="`${backendUrl}/api/tables/${table.id}/qr-image?type=${printingType}`" 
                                 class="receipt-qr-img"
                                 alt="QR Code"
                             />
@@ -738,8 +772,8 @@ onMounted(fetchData);
                                 <span class="receipt-instruction-en">Scan to start ordering</span>
                             </p>
                             <div class="receipt-session-info">
-                                <p class="receipt-session-label">Session ID</p>
-                                <p class="receipt-session-id">{{ table.sessions[0].id }}</p>
+                                <p class="receipt-session-label">{{ printingType === 'permanent' ? 'Table ID' : 'Session ID' }}</p>
+                                <p class="receipt-session-id">{{ printingType === 'permanent' ? table.id : table.sessions?.[0]?.id }}</p>
                             </div>
                             <p class="receipt-system-tag">Powered by OpenTable Systems</p>
                         </div>
