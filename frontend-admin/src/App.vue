@@ -15,7 +15,7 @@ const route = useRoute();
 const isCollapsed = ref(false);
 
 const navItems = [
-  { name: 'ผังโต๊ะ', path: '/', icon: Map },
+  { name: 'จัดการโต๊ะ', path: '/', icon: Map },
 ];
 
 </script>
@@ -72,7 +72,7 @@ const navItems = [
       <!-- Top Header -->
       <header class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-10 flex items-center justify-between shrink-0 z-20 sticky top-0">
         <div class="flex items-center">
-            <h1 class="text-xl font-black text-slate-800 uppercase tracking-widest italic">{{ route.name?.toString() === 'FloorPlan' ? 'ผังโต๊ะ' : 'การจัดการ' }}</h1>
+            <h1 class="text-xl font-black text-slate-800 uppercase tracking-widest italic">{{ route.name?.toString() === 'FloorPlan' ? 'จัดการโต๊ะ' : 'การจัดการ' }}</h1>
         </div>
         <div class="flex items-center space-x-4">
             <button class="w-10 h-10 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-indigo-600 transition-all">

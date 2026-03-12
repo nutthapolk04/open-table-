@@ -258,7 +258,7 @@ onMounted(fetchData);
           <MapPin class="w-6 h-6 text-indigo-600" />
         </div>
         <div>
-          <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">ผังโต๊ะ</h2>
+          <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">จัดการโต๊ะ</h2>
           <p class="text-slate-500 font-bold text-sm tracking-wide mt-1 italic">จัดการโซนและตำแหน่งที่ตั้งของแต่ละโต๊ะ</p>
         </div>
       </div>
