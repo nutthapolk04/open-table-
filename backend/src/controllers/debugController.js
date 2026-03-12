@@ -111,6 +111,23 @@ exports.runSeed = async (req, res) => {
             }
         });
 
+        // Ensure demo session for Vercel demo URL
+        const firstTable = await prisma.table.findFirst();
+        if (firstTable) {
+            await prisma.session.upsert({
+                where: { id: 'demo' },
+                update: { status: 'ACTIVE' },
+                create: {
+                    id: 'demo',
+                    tableId: firstTable.id,
+                    tierId: tierStandard.id,
+                    customerCount: 2,
+                    token: 'demo-token',
+                    status: 'ACTIVE'
+                }
+            });
+        }
+
         res.json({ message: 'Production data seeded successfully (Upserted)' });
     } catch (error) {
         res.status(500).json({ error: error.message });
