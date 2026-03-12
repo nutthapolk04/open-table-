@@ -404,12 +404,7 @@ onMounted(fetchData);
                         >
                             <Pencil class="w-3 h-3" />
                         </button>
-                        <button @click="() => handlePrint('session')" class="w-7 h-7 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm" title="Print Session QR">
-                            <Printer class="w-3.5 h-3.5" />
-                        </button>
-                        <button @click="() => handlePrint('permanent')" class="w-7 h-7 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm" title="Print Fixed Table QR">
-                            <QrCode class="w-3.5 h-3.5" />
-                        </button>
+
                         <button 
                             @click="handleDeleteTableClick(table)"
                             class="w-8 h-8 bg-white border border-slate-200 rounded-full shadow-md flex items-center justify-center text-slate-700 hover:text-red-500 hover:border-red-100 transition-all"
