@@ -128,7 +128,16 @@ export const usePosStore = defineStore("pos", {
         });
 
         this.tiers = tiersRes.data || [];
-        this.categories = (categoriesRes.data || []).map((c: any) => ({ id: c.id, name: c.name }));
+        
+        // Use unique categories by name to avoid duplications in UI
+        const categoriesMap = new Map();
+        (categoriesRes.data || []).forEach((c: any) => {
+          if (!categoriesMap.has(c.name)) {
+            categoriesMap.set(c.name, { id: c.id, name: c.name });
+          }
+        });
+        this.categories = Array.from(categoriesMap.values());
+
         this.zones = (zonesRes.data || []).map((z: any) => ({ id: z.id, name: z.name }));
 
         const allItems: MenuItem[] = [];
@@ -137,10 +146,11 @@ export const usePosStore = defineStore("pos", {
             allItems.push({
               id: m.id,
               name: m.name,
-              price: m.price,
+              nameTh: m.nameTh,
+              price: m.price || 0,
               categoryId: cat.id,
               category: cat.name,
-              image: "🍽️",
+              image: m.image || "🍽️",
               status: m.status || "AVAILABLE",
             });
           });
