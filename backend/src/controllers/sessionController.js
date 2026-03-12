@@ -91,7 +91,7 @@ exports.closeSession = async (req, res) => {
 exports.getSessionById = async (req, res) => {
     const prisma = req.app.get('prisma');
     try {
-        const session = await prisma.session.findUnique({
+        let session = await prisma.session.findUnique({
             where: { id: req.params.id },
             include: { 
                 table: { include: { zone: true } }, 
@@ -99,6 +99,31 @@ exports.getSessionById = async (req, res) => {
                 orders: { include: { items: { include: { menu: true } } } } 
             }
         });
+
+        // AUTO-CREATE DEMO SESSION IF REQUESTED BUT MISSING
+        if (!session && req.params.id === 'demo') {
+            console.log('Session "demo" not found, creating on-the-fly...');
+            const firstTable = await prisma.table.findFirst({ include: { zone: true } });
+            const firstTier = await prisma.buffetTier.findFirst();
+            if (firstTable && firstTier) {
+                session = await prisma.session.create({
+                    data: {
+                        id: 'demo',
+                        tableId: firstTable.id,
+                        tierId: firstTier.id,
+                        customerCount: 2,
+                        token: 'demo-token',
+                        status: 'ACTIVE'
+                    },
+                    include: { 
+                        table: { include: { zone: true } }, 
+                        tier: true, 
+                        orders: { include: { items: { include: { menu: true } } } } 
+                    }
+                });
+            }
+        }
+
         if (!session) return res.status(404).json({ error: 'Session not found' });
         
         // CHECK: If zone is closed, deny access
