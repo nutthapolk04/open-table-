@@ -40,5 +40,6 @@ router.get('/tables/:tableId/session/active', sessionController.getActiveSession
 router.get('/tables/:id/qr-image', qrController.generateTableQR);
 
 router.get('/tiers/:id/menu', menuController.getTierMenu);
+router.get('/menus', menuController.getAllMenus);
 
 module.exports = router;

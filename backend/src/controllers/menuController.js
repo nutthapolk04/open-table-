@@ -100,3 +100,15 @@ exports.updateMenuStatus = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+exports.getAllMenus = async (req, res) => {
+    const prisma = req.app.get('prisma');
+    try {
+        const menus = await prisma.menu.findMany({
+            include: { category: true }
+        });
+        res.json(menus);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

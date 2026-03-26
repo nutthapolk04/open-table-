@@ -30,8 +30,13 @@ export const useCustomerStore = defineStore('customer', {
                 const sessionRes = await api.get(`/sessions/${sessionId}`);
                 this.session = sessionRes.data;
 
-                // Fetch menu based on tier
-                const menuRes = await api.get(`/tiers/${this.session.tierId}/menu`);
+                // Fetch menu - use tier-specific if available, otherwise all menus
+                let menuRes;
+                if (this.session.tierId) {
+                    menuRes = await api.get(`/tiers/${this.session.tierId}/menu`);
+                } else {
+                    menuRes = await api.get(`/menus`);
+                }
                 this.menuItems = menuRes.data;
 
                 // Extract unique categories
