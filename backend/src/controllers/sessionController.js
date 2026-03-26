@@ -125,11 +125,6 @@ exports.getSessionById = async (req, res) => {
         }
 
         if (!session) return res.status(404).json({ error: 'Session not found' });
-        
-        // CHECK: If zone is closed, deny access
-        if (session.table && session.table.zone && !session.table.zone.isActive) {
-            return res.status(403).json({ error: 'Zone is currently closed. Please contact staff.' });
-        }
 
         res.json(session);
     } catch (error) {
@@ -311,16 +306,6 @@ exports.getActiveSessionByTable = async (req, res) => {
         });
         
         if (!session) return res.status(404).json({ error: 'No active session found for this table' });
-        
-        // Check zone status as well
-        const table = await prisma.table.findUnique({
-            where: { id: tableId },
-            include: { zone: true }
-        });
-        
-        if (table && table.zone && !table.zone.isActive) {
-            return res.status(403).json({ error: 'Zone is currently closed.' });
-        }
 
         res.json(session);
     } catch (error) {
