@@ -71,7 +71,8 @@ const toggleZoneStatus = async (zone: any) => {
         showNotification(`${!zone.isActive ? 'เปิด' : 'ปิด'}บริการโซน ${zone.name} เรียบร้อย`, 'success');
         fetchData();
     } catch (e: any) {
-        showNotification('เกิดข้อผิดพลาดในการเปลี่ยนสถานะโซน', 'error');
+        console.error(e);
+        showNotification('เกิดข้อผิดพลาดในการเปลี่ยนสถานะโซน: ' + (e.response?.data?.error || e.message), 'error');
     }
 };
 
@@ -95,11 +96,24 @@ const fetchData = async () => {
 };
 
 const createZone = async () => {
-    if (!newZone.value.name) return;
-    await api.post('/zones', newZone.value);
-    showAddZone.value = false;
-    newZone.value.name = '';
-    fetchData();
+    if (!newZone.value.name) {
+        showNotification('กรุณาระบุชื่อโซน', 'warning');
+        return;
+    }
+    
+    loading.value = true;
+    try {
+        await api.post('/zones', newZone.value);
+        showNotification('สร้างโซนใหม่เรียบร้อยแล้ว', 'success');
+        showAddZone.value = false;
+        newZone.value.name = '';
+        await fetchData();
+    } catch (e: any) {
+        console.error(e);
+        showNotification('ไม่สามารถสร้างโซนได้: ' + (e.response?.data?.error || e.message), 'error');
+    } finally {
+        loading.value = false;
+    }
 };
 
 const createTable = async () => {
@@ -190,10 +204,12 @@ const updateZone = async () => {
         await api.patch(`/zones/${editingZone.value.id}`, {
             name: editingZone.value.name
         });
+        showNotification('แก้ไขข้อมูลโซนเรียบร้อยแล้ว', 'success');
         showEditZone.value = false;
         editingZone.value = null;
         fetchData();
     } catch (e: any) {
+        console.error(e);
         showNotification(translateError(e.response?.data?.error) || 'เกิดข้อผิดพลาดในการแก้ไขชื่อโซน', 'error');
     }
 };
